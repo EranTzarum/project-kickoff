@@ -1,152 +1,90 @@
-# project-kickoff
+<div align="center">
 
-**A staged pre-flight for building a new site or system with AI coding agents.**
-It makes the agent ask the right questions *before* the first line of product code, generates the project's
-docs and guardrails from templates, and keeps an advisory checklist visible for the whole build.
+# 🛫 project-kickoff
 
-Works as a skill for **Claude Code** (primary), **Codex CLI** and **Cursor**. No dependencies beyond Node 18+.
+**Pre-flight checklist skill for building sites and systems with AI coding agents.**
+Ask the right questions *before* the first line of code. Generate the docs and guardrails. Never lose a lesson twice.
+
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-skill-8A63D2)](#install)
+[![Codex CLI](https://img.shields.io/badge/Codex%20CLI-compatible-10a37f)](#install)
+[![Cursor](https://img.shields.io/badge/Cursor-compatible-000000)](#install)
+[![Node](https://img.shields.io/badge/node-%E2%89%A518-339933)](#install)
+[![Tests](https://img.shields.io/badge/tests-4%20passing-brightgreen)](#verify)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
+</div>
 
 ---
 
-## Why this exists
+## TL;DR
 
-This skill is a retrospective turned into a program. Its author spent three months building a multi-tenant CRM
-(React + Vite, Supabase, Vercel) with Claude Code, Codex and Cursor. Looking back, most of the lost time was
-**preparation that arrived late**, not code that was hard to write:
+You type `/project-kickoff` in a fresh repo. The agent walks you through **six short questionnaires**
+(intake → domain → architecture → database → auth/env → workspace), turns your answers into the project's
+**real files** (docs, `CLAUDE.md`, hooks, sub-agents, gate runner, CI), and a tiny script tells you
+**what is still missing** at every step. After that, a **build-loop checklist** repeats for every feature.
 
-| What went wrong on the CRM | When it was discovered | What it cost |
+Every question exists because something specific went wrong on a real three-month build. There are
+**99 dated lessons** behind the checklist, and the agent can quote the one behind any rule.
+
+<p align="center">
+  <img src="docs/assets/stages.svg" alt="Six pre-flight stages, then a build loop" width="980">
+</p>
+
+---
+
+## Why
+
+Building a multi-tenant CRM with Claude Code, Codex and Cursor took three months. In hindsight most of the
+time went to **preparation that arrived late**, not to code:
+
+| 🔥 What went wrong | 🕒 Found | 💸 Cost |
 |---|---|---|
-| Auth redirect URLs, magic links and the set-password flow were misconfigured | day one, by a non-technical user in production | several sessions of debugging |
-| The data model (enums, ownership, sharing, dedup keys) was decided piecemeal | across 63 migrations and repeated hardening passes | re-migrations, re-imports, contract breaks |
-| Test gates only passed in the main checkout (a gitignored `.env`) | the first unattended multi-agent run | a full run wasted |
-| Migrations shipped without the deploy that needed them, or the other way round | three separate times, weeks apart | silent production failures |
-| Migration numbers collided across parallel branches | three times | live names diverged from repo files |
-| Sessions died at quota ceilings with state only in the chat | repeatedly | "refresh my memory where we stopped" |
-| Guardrails (hooks, agents, rules) landed in week 1 and did not grow | until week 11 | every gap above stayed open |
+| Auth redirect URLs, magic links and set-password flow misconfigured | day one, by a non-technical user | sessions of debugging |
+| Data model (enums, ownership, dedup keys) decided piecemeal | across 63 migrations | re-migrations, contract breaks |
+| Test gates passed only in the main checkout (gitignored `.env`) | first unattended agent run | a full run wasted |
+| Migration shipped without the deploy that needed it | three separate times | silent production failures |
+| Migration numbers collided across branches | three times | live names ≠ repo files |
+| Sessions died at quota limits with state only in chat | repeatedly | "refresh my memory where we stopped" |
+| Guardrails written in week 1, never grew | until week 11 | every gap above stayed open |
 
-`project-kickoff` asks about each of those things at the stage where the answer is still cheap, writes the
-answer into a file the checker can see, and generates the guardrail so the next project never relies on memory.
-
----
-
-## How it works, in one picture
-
-```mermaid
-flowchart TB
-    U[You: /project-kickoff] --> S0
-
-    subgraph PRE["Pre-flight (once per project, before any product code)"]
-        direction TB
-        S0["Stage 0 · Intake<br/>who, device, languages, country, stack"] --> S1
-        S1["Stage 1 · Domain & data model<br/>entities, roles, FROZEN enums, rules, dedup keys"] --> S2
-        S2["Stage 2 · Architecture & security<br/>tenancy, service-role allowlist, anon surface, limits"] --> S3
-        S3["Stage 3 · Database<br/>migration template, auth hook, types regen, runbook"] --> S4
-        S4["Stage 4 · Auth & environments<br/>redirect URLs, SMTP, OAuth, env matrix"] --> S5
-        S5["Stage 5 · Workspace & harness<br/>CLAUDE.md, hooks, agents, gates, worktrees, CI"]
-    end
-
-    S5 --> S6
-
-    subgraph LOOP["Build loop (repeats per feature)"]
-        direction LR
-        S6["design → ticket → worktree → build → gates → verify → runbook → STATE.md"]
-    end
-
-    style PRE fill:#f4f6fb,stroke:#9aa7c7
-    style LOOP fill:#f6fbf4,stroke:#9ac79f
-```
-
-Every stage has the same shape:
-
-```mermaid
-sequenceDiagram
-    participant You
-    participant Agent as Agent (Claude / Codex / Cursor)
-    participant R as render.mjs
-    participant C as preflight.mjs
-
-    Agent->>You: ONE batched questionnaire (3–6 questions, defaults pre-filled)
-    You-->>Agent: answers (silence = default)
-    Agent->>Agent: writes .kickoff/answers.json
-    Agent->>R: render --stage n
-    R-->>Agent: docs / hooks / scripts written from templates
-    Agent->>C: preflight
-    C-->>Agent: STAGE n NAME: READY | MISSING — items
-    Agent->>You: receipt: files written · missing items · owner actions
-    Note over Agent,You: no per-step permission prompts; next stage starts automatically
-```
-
-Three things make this different from a checklist in a wiki:
-
-1. **Questions are asked once, batched, with defaults.** You answer a short form per stage instead of being
-   interrupted forty times.
-2. **Answers become files, not chat.** `render.mjs` turns the answers into the project's real docs and guardrails.
-   Nothing lives only in the conversation, so a session that dies at a quota ceiling loses nothing.
-3. **A script says what is missing.** `preflight.mjs` reads the tracker and prints READY / MISSING per stage.
-   It is advisory: it never blocks you, it just refuses to let a gap be invisible. `--strict` makes it fail in CI.
+`project-kickoff` asks about each of these **at the stage where the answer is still cheap**, writes it to a
+file a script can check, and generates the guardrail so the next project does not depend on anyone's memory.
 
 ---
 
-## What you get in a kicked-off project
+## ✨ Features
 
-```
-docs/KICKOFF.md              stage tracker: one row per deliverable — the checker reads this
-docs/DOMAIN.md               glossary, entities, roles, FROZEN enums, domain rules, dedup keys, out of scope
-docs/ARCHITECTURE.md         tenancy, privileged access, anon surface, identity trust, integrations, platform limits
-docs/ENV_MATRIX.md           every env var × Dev/Preview/Prod, redirect URLs, SMTP, OAuth, databases
-docs/MIGRATION_RUNBOOK.md    naming, template rules, additive → deploy → revoke order, rollback
-STATE.md                     the ONE living "where are we" file (done / in flight / next / mistakes already made)
-CLAUDE.md + AGENTS.md        the rules file (what to always / never do), identical copy for Codex & Cursor
-.env.example                 keys only, cross-checked against ENV_MATRIX
-supabase/migrations/         _TEMPLATE.sql (RLS + revokes + CHECK-not-null baked in) and the auth-hook recipe
-.claude/settings.json        hook wiring
-.claude/hooks/               block-env-edit · block-destructive-sql · service-role-guard · migration-number-check
-.claude/agents/              quality-gate · rls-auditor
-scripts/                     gates.mjs · db-types.mjs · worktree-setup.ps1/.sh · preflight.mjs
-.github/workflows/           gates.yml (clean-clone gates, no secrets) · keepalive.yml (free-tier DB)
-.kickoff/answers.json        your answers — re-render any stage from them
-```
-
-Each guardrail exists because something specific went wrong once. The full map is in
-[`references/harness.md`](references/harness.md).
+- **Six pre-flight stages, one batched questionnaire each** — 3–6 questions, defaults pre-filled, silence = default. No drip-fed interruptions.
+- **Answers become files** — `render.mjs` writes `DOMAIN.md`, `ARCHITECTURE.md`, `ENV_MATRIX.md`, `MIGRATION_RUNBOOK.md`, `STATE.md`, `CLAUDE.md`, hooks, agents, scripts and CI from templates. Nothing lives only in the chat.
+- **Advisory checker** — `preflight.mjs` prints `READY` / `MISSING` per stage plus cross-checks (env keys vs matrix, tables without RLS, functions callable by anon). Never blocks; `--strict` for CI.
+- **Guardrails generated, not remembered** — four hooks (env-edit, destructive SQL, service-role, migration-number), two sub-agents (quality-gate, rls-auditor), a gate runner, a safe worktree script, a clean-clone CI workflow.
+- **Build-loop checklist per feature** — design → ticket → worktree → gates → cross-model verify → migration runbook → `STATE.md`.
+- **99 dated lessons with evidence** — every checklist item cites one. Ask *why* and get the commit, the doc line, or the chat that taught it.
+- **Stack profiles** — Supabase + React/Vite + Vercel ships as default with a platform-limits sheet; add your own in one file.
+- **Runs in Claude Code, Codex CLI and Cursor** — same folder, no build, no dependencies.
 
 ---
 
-## The evidence behind every checklist item
-
-[`references/lessons.md`](references/lessons.md) holds **99 dated lessons**, each with its evidence
-(commit hash, doc line, or chat) and the rule it produced. They were mined from:
-
-- the CRM's git history (365 commits, 63 migrations) and its docs,
-- the author's Obsidian vault (decisions and patterns),
-- the author's chat history across Claude Code (`history.jsonl`, claude-mem), Codex (`state_5.sqlite`)
-  and Cursor (composer store, agent transcripts).
-
-Every question in [`references/stages.md`](references/stages.md) and every checklist item cites a lesson id
-(`L37`, `L60`, …). Ask the agent *"why does stage 3 insist on the hook role's own policy?"* and it quotes L37:
-the CRM's access-token hook "succeeded" for a day while never stamping the tenant claim.
-
-```mermaid
-flowchart LR
-    G[git history<br/>365 commits · 63 migrations] --> L
-    D[repo docs<br/>STATE · TAKEOVER · REGISTER] --> L
-    V[Obsidian vault<br/>decisions · patterns] --> L
-    C[chat history<br/>Claude · Codex · Cursor] --> L
-    L[(references/lessons.md<br/>99 dated rows)] --> S[references/stages.md<br/>questions + exit checklists]
-    L --> H[references/harness.md<br/>which hook guards which lesson]
-    S --> T[templates/*]
-    H --> T
-```
-
----
-
-## Install
-
-Clone into the skill root of each harness you use (the folder name must stay `project-kickoff`):
+## 🚀 Quick start
 
 ```bash
-git clone git@github.com:EranTzarum/project-kickoff.git ~/.claude/skills/project-kickoff
+# 1. install (Claude Code)
+git clone https://github.com/EranTzarum/project-kickoff.git ~/.claude/skills/project-kickoff
+
+# 2. verify
+node --test ~/.claude/skills/project-kickoff/scripts/preflight.test.mjs   # ℹ pass 4 / ℹ fail 0
+
+# 3. in your new (or young) project, inside Claude Code:
+/project-kickoff
 ```
+
+Then answer the stage-0 questions. The agent renders the files, runs the checker, prints a one-screen receipt
+(files written · missing items · owner actions) and moves to stage 1 without asking permission again.
+
+<details>
+<summary><b>Install for Codex CLI and Cursor too</b></summary>
+
+Copy (or clone) the same folder into each harness's user skill root. The folder name must stay `project-kickoff`.
 
 | Harness | Skill root |
 |---|---|
@@ -154,125 +92,183 @@ git clone git@github.com:EranTzarum/project-kickoff.git ~/.claude/skills/project
 | Codex CLI | `~/.codex/skills/project-kickoff` |
 | Cursor | `~/.cursor/skills/project-kickoff` |
 
-Copy the same folder to the other roots (or clone three times). No build step, no `npm install`.
+Codex and Cursor have no question widget: the agent prints the same questionnaire as a numbered list with the
+defaults marked and waits for your reply. They also do not run Claude Code hooks; for them the generated
+`AGENTS.md` (a copy of `CLAUDE.md`) plus the CI workflow are the enforcement.
+</details>
 
-Verify:
+---
+
+## 🧭 Usage
+
+| Command | What happens |
+|---|---|
+| `/project-kickoff` | Runs stages 0 → 5, starting at the first stage with missing deliverables |
+| `/project-kickoff status` | Runs the checker only. Prints the stage table. Changes nothing |
+| `/project-kickoff stage 3` | Re-asks stage 3's questionnaire and re-renders its files |
+| `/project-kickoff feature <name>` | Prints the build-loop checklist filled in for one feature |
+
+### What the checker prints
+
+<p align="center">
+  <img src="docs/assets/preflight-output.svg" alt="preflight.mjs output: READY / MISSING per stage plus CHECK lines" width="860">
+</p>
 
 ```bash
-node ~/.claude/skills/project-kickoff/scripts/preflight.test.mjs
+node scripts/preflight.mjs .            # advisory, always exit 0
+node scripts/preflight.mjs . --strict   # CI: exit 1 on any MISSING or CHECK line
 ```
 
-Expected: `ℹ pass 4` / `ℹ fail 0`.
+### Owner actions
+
+Some prerequisites cannot be done by an agent: registering redirect URLs, configuring SMTP, submitting OAuth
+verification, setting secrets in the hosting dashboard, choosing a database plan. Each stage's receipt lists
+them, and `docs/KICKOFF.md` keeps a dated log so they are never forgotten.
 
 ---
 
-## Use
+## ⚙️ How it works
 
-| You type | What happens |
-|---|---|
-| `/project-kickoff` in an empty (or young) repo | runs stages 0→5 in order, starting at the first stage whose deliverables are missing |
-| `/project-kickoff status` | runs the checker only; prints the stage table; changes nothing |
-| `/project-kickoff stage 2` | re-asks stage 2's questionnaire and re-renders its deliverables |
-| `/project-kickoff feature <name>` | prints the build-loop checklist (stage 6) filled in for one feature |
-
-In Codex or Cursor, where no question widget exists, the agent prints the same questionnaire as a numbered list
-with defaults and waits for your reply.
-
-**Owner actions.** Some prerequisites cannot be done by an agent: registering redirect URLs, configuring SMTP,
-submitting OAuth verification, setting secrets in the hosting dashboard, choosing a database plan. Each stage
-ends with a receipt listing them, and `docs/KICKOFF.md` keeps a dated log so they do not get forgotten.
-
-### Example checker output
-
-```
-STAGE 0 INTAKE: READY
-STAGE 1 DOMAIN: MISSING — docs/DOMAIN.md (placeholder {{ENUMS}} left)
-STAGE 2 ARCHITECTURE: READY
-STAGE 3 DATABASE: READY
-STAGE 4 AUTH & ENVIRONMENTS: MISSING — .env.example (absent)
-STAGE 5 WORKSPACE & HARNESS: READY
-CHECK env: docs/ENV_MATRIX.md key SMTP_API_KEY not in .env.example
-CHECK migrations: 202610011200_leads.sql creates function convert_lead() without a revoke from anon/public
+```mermaid
+sequenceDiagram
+    participant You
+    participant Agent
+    participant render as render.mjs
+    participant check as preflight.mjs
+    Agent->>You: one batched questionnaire (defaults pre-filled)
+    You-->>Agent: answers
+    Agent->>Agent: write .kickoff/answers.json
+    Agent->>render: render --stage n
+    render-->>Agent: docs, hooks, scripts written from templates
+    Agent->>check: preflight
+    check-->>Agent: STAGE n: READY or MISSING
+    Agent->>You: receipt, then next stage
 ```
 
-Exit code is always 0. `node scripts/preflight.mjs . --strict` exits 1 on any MISSING or CHECK line — use that in CI.
+Three ideas make this more than a wiki checklist:
 
----
+1. **Ask once, batched, with defaults.** One short form per stage instead of forty interruptions.
+2. **Files, not chat.** `render.mjs` turns answers into the repo's real docs and guardrails. A session that dies at a quota ceiling loses nothing; you can even continue on a different agent.
+3. **A script says what is missing.** `preflight.mjs` reads `docs/KICKOFF.md` (the deliverable manifest) and refuses to let a gap be invisible — without ever blocking you.
 
-## The stages in detail
+### The six stages
 
-| # | Stage | It asks about | It produces | Lessons it encodes (examples) |
+| # | Stage | Asks about | Produces | Example lessons |
 |---|---|---|---|---|
-| 0 | Intake | purpose, primary user & device, languages/RTL, country, stack profile, who plans vs who codes | `docs/KICKOFF.md`, `STATE.md` | payment provider must support the country (L1); tooling bring-up is its own checklist (L4) |
-| 1 | Domain & data model | entities, roles, lifecycle enums, domain rules with numbers, data conventions, dedup keys, out of scope | `docs/DOMAIN.md` | enums frozen early (L15); "3.5" = 3,500,000 written down (L13); publish ≠ lifecycle ≠ archive (L14) |
-| 2 | Architecture & security | tenancy model, service-role allowlist, anon surface, frozen contracts, peer-read paths, platform limits, size budgets | `docs/ARCHITECTURE.md` | revoke EXECUTE on every function (L22); Hobby plan = one cron per day (L25); canonical domain in config (L27) |
-| 3 | Database | prod + separate test project, naming, types targets, backups | migration template, auth-hook recipe, `db-types.mjs`, runbook | hook role needs its own policy (L37); no partial index behind an upsert (L41); CHECK passes on NULL (L43) |
-| 4 | Auth & environments | origins per env, SMTP, OAuth providers, Preview isolation | `docs/ENV_MATRIX.md`, `.env.example` | redirect URLs before the first invite (L50); SMTP before auth mail (L52); Preview gets no prod secrets (L56) |
-| 5 | Workspace & harness | gate commands, deploy rule, worker platforms, shell & line endings | `CLAUDE.md`, hooks, agents, `gates.mjs`, worktree scripts, CI | gates pass in a clean worktree (L60); never junction node_modules (L62); deploy from main only (L65) |
-| 6 | Build loop | (per feature) | checklist | acceptance as invariants not counts (L82); cap identical retries at 2 (L89); orchestrator routes, workers build (L91) |
+| 0 | **Intake** | purpose, primary user & device, languages/RTL, country, stack profile, who plans vs who codes | `docs/KICKOFF.md`, `STATE.md` | payment provider must support the country (L1) · tooling bring-up is its own checklist (L4) |
+| 1 | **Domain & data model** | entities, roles, lifecycle enums, rules with numbers, data conventions, dedup keys, out of scope | `docs/DOMAIN.md` | freeze enums early (L15) · "3.5" = 3,500,000 written down (L13) · publish ≠ lifecycle ≠ archive (L14) |
+| 2 | **Architecture & security** | tenancy, service-role allowlist, anon surface, frozen contracts, peer-read paths, platform limits, size budgets | `docs/ARCHITECTURE.md` | revoke EXECUTE on every function (L22) · Hobby plan = one cron/day (L25) · canonical domain in config (L27) |
+| 3 | **Database** | prod + separate test project, naming, types targets, backups | migration template, auth-hook recipe, `db-types.mjs`, runbook | hook role needs its own policy (L37) · no partial index behind an upsert (L41) · CHECK passes on NULL (L43) |
+| 4 | **Auth & environments** | origins per env, SMTP, OAuth, Preview isolation | `docs/ENV_MATRIX.md`, `.env.example` | redirect URLs before the first invite (L50) · SMTP before auth mail (L52) · Preview gets no prod secrets (L56) |
+| 5 | **Workspace & harness** | gate commands, deploy rule, worker platforms, shell & line endings | `CLAUDE.md`, hooks, agents, `gates.mjs`, worktree scripts, CI | gates pass in a clean worktree (L60) · never junction `node_modules` (L62) · deploy from `main` only (L65) |
+| 6 | **Build loop** | per feature | checklist | acceptance as invariants not counts (L82) · cap identical retries at 2 (L89) · orchestrator routes, workers build (L91) |
 
-The default **stack profile** is Supabase + React/Vite + Vercel + Claude Code. It pre-fills every default and
-ships a platform-limits sheet ([`references/stack-profiles/supabase-react-vercel.md`](references/stack-profiles/supabase-react-vercel.md)).
-Add another profile by copying that file; the stages themselves are stack-agnostic.
+### What lands in your project
+
+```
+docs/KICKOFF.md              stage tracker — one row per deliverable; the checker reads this
+docs/DOMAIN.md               glossary · entities · roles · FROZEN enums · rules · dedup keys · out of scope
+docs/ARCHITECTURE.md         tenancy · privileged access · anon surface · identity trust · limits · budgets
+docs/ENV_MATRIX.md           env vars × Dev/Preview/Prod · redirect URLs · SMTP · OAuth · databases
+docs/MIGRATION_RUNBOOK.md    naming · template rules · additive → deploy → revoke · rollback
+STATE.md                     the ONE living "where are we" file (done / in flight / next / mistakes made)
+CLAUDE.md + AGENTS.md        rules file (always / never); identical copy for Codex & Cursor
+.env.example                 keys only — cross-checked against ENV_MATRIX
+supabase/migrations/         _TEMPLATE.sql (RLS + revokes + CHECK-not-null baked in) · auth-hook recipe
+.claude/settings.json        hook wiring
+.claude/hooks/               block-env-edit · block-destructive-sql · service-role-guard · migration-number-check
+.claude/agents/              quality-gate · rls-auditor
+scripts/                     gates.mjs · db-types.mjs · worktree-setup.ps1/.sh · preflight.mjs
+.github/workflows/           gates.yml (clean clone, no secrets) · keepalive.yml (free-tier DB)
+.kickoff/answers.json        your answers — re-render any stage from them
+```
 
 ---
 
-## Repository map
+## 📚 The lessons behind the checklist
+
+[`references/lessons.md`](references/lessons.md) — **99 rows**, each with a date, a category, what happened,
+the evidence (commit hash, doc line or chat), the rule it produced and the stage that now owns it. Mined from a
+real project's git history (365 commits, 63 migrations), its docs, the author's decision vault, and the
+author's chat history across Claude Code, Codex and Cursor.
+
+```mermaid
+flowchart LR
+    G["git history"] --> L
+    D["repo docs"] --> L
+    V["decision vault"] --> L
+    C["chat history: Claude, Codex, Cursor"] --> L
+    L[("lessons.md — 99 dated rows")] --> S["stages.md — questions and exit checklists"]
+    L --> H["harness.md — which hook guards which lesson"]
+    S --> T["templates/"]
+    H --> T
+```
+
+Ask the agent *"why does stage 3 insist on the hook role's own policy?"* and it quotes **L37**: the access-token
+hook "succeeded" for a day while never stamping the tenant claim, because the hook's role could not read the
+membership table.
+
+---
+
+## 🗂 Repository map
 
 ```
-SKILL.md                              the agent-facing instructions: modes, rules, stage loop
-agents/openai.yaml                    Codex display metadata
+SKILL.md                                  agent-facing instructions: modes, rules, stage loop
+agents/openai.yaml                        Codex display metadata
 references/
-  stages.md                           questionnaire + deliverables + exit checklist per stage (cites lessons)
-  lessons.md                          99 dated lessons: what happened · evidence · rule · owning stage
-  harness.md                          which generated file guards which lesson; what Codex/Cursor lack
-  stack-profiles/supabase-react-vercel.md   defaults + platform-limits sheet
+  stages.md                               questionnaire · deliverables · exit checklist per stage (cites lessons)
+  lessons.md                              99 dated lessons
+  harness.md                              which generated file guards which lesson; what Codex/Cursor lack
+  stack-profiles/supabase-react-vercel.md defaults + platform-limits sheet
 templates/
-  PLACEHOLDERS.md                     every {{PLACEHOLDER}} and its meaning
-  answers.example.json                a complete example answers file (also the test fixture)
-  docs/  env/  db/  claude/  scripts/  ci/    the files rendered into a project
+  PLACEHOLDERS.md                         every {{PLACEHOLDER}} and its meaning
+  answers.example.json                    complete example answers (also the test fixture)
+  docs/ env/ db/ claude/ scripts/ ci/     the files rendered into a project
 scripts/
-  render.mjs                          answers.json → files; skips existing; --force to regenerate
-  preflight.mjs                       the advisory checker (copied into each project so CI can run it)
-  preflight.test.mjs                  node --test: full render READY, MISSING + strict, placeholder/env/RLS checks
+  render.mjs                              answers.json → files; skips existing; --force to regenerate
+  preflight.mjs                           the advisory checker (copied into each project so CI can run it)
+  preflight.test.mjs                      node --test
+docs/assets/                              images used by this README
 ```
 
 ---
 
-## Design choices (and why)
-
-- **Advisory, not blocking.** A MISSING line is a to-do, not a stop sign. Blocking would recreate the per-step
-  permission friction that makes agent work slow; CI gets `--strict` instead.
-- **One batched questionnaire per stage.** Fewer interruptions than one question at a time; more steering than
-  "accept all defaults".
-- **Files over conversation.** Every answer is rendered into the repo. Wallet rotation (Claude → Codex → Cursor
-  when a quota dies) works because nothing important is in the chat.
-- **Templates, not free-form generation.** The agent fills placeholders; it does not improvise a CLAUDE.md.
-  `render.mjs` refuses to overwrite and reports unfilled placeholders; the fix is always "add the answer".
-- **Every rule cites a lesson.** A rule without a dated lesson row is an opinion. Keep `lessons.md` growing:
-  a new trap in any project gets a row and a stage that owns it.
-- **No git, no deploy, no secrets from the skill.** It writes files. Committing, pushing, deploying and
-  filling real `.env` values stay human actions, listed as owner actions.
-
----
-
-## Extending
-
-- **New stack:** copy `references/stack-profiles/supabase-react-vercel.md`, change the defaults and the limits
-  sheet, add any stack-specific templates under `templates/` and map them in `scripts/render.mjs` `STAGE_FILES`.
-- **New lesson:** add a row to `references/lessons.md` with the next id, cite it from the stage that owns it in
-  `references/stages.md`, and — if it deserves a guardrail — add the template and a row in `references/harness.md`.
-- **New check:** extend `scripts/preflight.mjs`, add a case to `preflight.test.mjs`, keep it advisory.
-
-Run the tests after any change:
+## 🧪 Verify
 
 ```bash
 node --test scripts/preflight.test.mjs
 ```
 
+The test renders the example answers into a temp folder and proves: every stage READY after a full render;
+MISSING plus `--strict` exit 1 after deleting a deliverable; leftover placeholders, env drift, a table without
+RLS and a function without a revoke are all reported; advisory mode always exits 0.
+
 ---
 
-## Status
+## 🧩 Extend
 
-Built 2026-09-28 from the Real Estate CRM retrospective. First use on a fresh project pending; expect the
-questionnaires and defaults to tighten after that.
+- **New stack** — copy `references/stack-profiles/supabase-react-vercel.md`, change defaults and the limits sheet, add stack-specific templates and map them in `scripts/render.mjs` (`STAGE_FILES`).
+- **New lesson** — add a row to `references/lessons.md` with the next id, cite it from the owning stage in `references/stages.md`, and if it deserves a guardrail, add the template plus a row in `references/harness.md`.
+- **New check** — extend `scripts/preflight.mjs`, add a case to the test, keep it advisory.
+
+---
+
+## ❓ FAQ
+
+**Does it write code for my app?** No. It writes preparation: docs, rules, hooks, scripts, CI. Product code starts after stage 5.
+
+**Will it overwrite my files?** No. `render.mjs` skips anything that exists; `--force` is explicit.
+
+**Does it commit, deploy or touch secrets?** No. Those stay human actions and are listed as owner actions.
+
+**Is it Supabase-only?** The stages are stack-agnostic; the default profile is Supabase + React/Vite + Vercel because that is where the lessons came from. Add a profile for your stack.
+
+**What if I already have a project?** Run `/project-kickoff status`. It prints one MISSING line for the tracker and changes nothing; you can then backfill stage by stage.
+
+**Why advisory instead of blocking?** Blocking recreates the per-step permission friction that makes agent work slow. A MISSING line is a to-do you can see; CI gets `--strict`.
+
+---
+
+## 📄 License
+
+[MIT](LICENSE) © 2026 Eran Tzarum

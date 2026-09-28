@@ -28,7 +28,7 @@ Replace every one of these when rendering. The checker flags any `{{...}}` left 
 | `{{INTEGRATIONS}}` | external contracts to freeze | Chrome extension payload |
 | `{{PLATFORM_LIMITS}}` | rows copied from the profile's limits sheet | Vercel Hobby: 1 cron/day |
 | `{{SIZE_BUDGETS}}` | body/upload/timeout budgets | JSON body 1 MB |
-| `{{SUPABASE_PROJECT_ID}}` | prod project ref | txfvqtalzvyohgqaecqc |
+| `{{SUPABASE_PROJECT_ID}}` | prod project ref | abcdefghijklmnopqrst |
 | `{{TEST_PROJECT_ID}}` | separate test/staging project ref | (new) |
 | `{{BACKUP_PLAN}}` | who backs up prod and how often | Pro plan daily / weekly encrypted export |
 | `{{PROD_URL}}` | canonical production origin | https://crm.example.com |
