@@ -1,0 +1,27 @@
+# Keeps a free-tier database from auto-pausing. Daily on purpose: `*/2` in the day-of-month field
+# means "odd days only", not "every two days", and one failed run then exceeded the pause threshold.
+# Fails loudly on an empty URL/key so a secret-injection failure cannot masquerade as success.
+name: Database keepalive
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping REST endpoint
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "Missing SUPABASE_URL or SUPABASE_ANON_KEY secret"; exit 1
+          fi
+          status=$(curl -s -o /dev/null -w "%{http_code}" \
+            "${SUPABASE_URL}/rest/v1/{{TENANT_TABLE}}?select=id&limit=1" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+          echo "HTTP $status"
+          [ "$status" -lt 400 ] || exit 1

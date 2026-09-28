@@ -1,0 +1,4 @@
+interface:
+  display_name: "Project Kickoff"
+  short_description: "Staged pre-flight and harness generator for a new project"
+  default_prompt: "Use $project-kickoff to run the staged pre-flight (intake, domain, architecture, database, auth/env, workspace) for this project, or `status` to print the checklist."

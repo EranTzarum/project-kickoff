@@ -1,0 +1,25 @@
+# Runs the project gates in a clean clone with NO secrets, on every push and PR.
+# Proves the rule "a gate is only real if it passes in a clean worktree". Live-DB suites skip here.
+# Production deploys happen from main via the hosting platform's git integration, never from a laptop.
+name: gates
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Run gates from docs/KICKOFF.md
+        run: node scripts/gates.mjs
+      - name: Kickoff checklist (advisory)
+        if: always()
+        run: node scripts/preflight.mjs . || true

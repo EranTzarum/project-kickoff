@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/block-destructive-sql.js\"" }
+        ],
+        "description": "Block destructive raw SQL (DROP/TRUNCATE/DELETE without WHERE) run from a shell"
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/block-env-edit.js\"" },
+          { "type": "command", "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/migration-number-check.js\"" }
+        ],
+        "description": "Block edits to real .env files; refuse a migration prefix that already exists locally or on origin/main"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/service-role-guard.js\"" }
+        ],
+        "description": "Warn when the service-role key is referenced outside the allowlisted directories"
+      }
+    ]
+  }
+}
