@@ -247,6 +247,7 @@ membership table.
 
 ```
 SKILL.md                                  agent-facing instructions: modes, rules, stage loop
+CLAUDE.md, AGENTS.md                      rules for agents working on this repo (gates, public-repo rule)
 agents/openai.yaml                        Codex display metadata
 references/
   stages.md                               questionnaire · deliverables · exit checklist per stage (cites lessons)
