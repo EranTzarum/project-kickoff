@@ -1,6 +1,6 @@
-# Lessons from the Real Estate CRM build (2026-07-07 → 2026-09-28)
+# Lessons from a three-month multi-tenant CRM build
 
-Sources: git history (365 commits, 63 migrations), repo docs, the Obsidian vault, and the owner's chat
+Sources: git history (365 commits, 63 migrations), repo docs, the owner's notes, and the owner's chat
 history across Claude Code, Codex and Cursor (history.jsonl, claude-mem summaries and observations,
 Codex thread index, Cursor prompts). Each row: what happened, the evidence, the rule it produced, and
 the kickoff stage that now owns the rule. `stages.md` cites these ids; quote the row when the user asks "why".
@@ -11,10 +11,10 @@ Format: `| id | date | category | what happened | evidence | rule | stage |`
 
 | id | date | category | what happened | evidence | rule | stage |
 |---|---|---|---|---|---|---|
-| L1 | 2026-07-19 | env | Stripe cannot onboard an Israeli business; billing was coded anyway and still returns 503 months later | STATE.md:134, REGISTER.md:73 | Confirm the payment provider supports the business's country before any billing code exists | intake |
+| L1 | 2026-07-19 | env | Stripe could not onboard a business in its country; billing was coded anyway and still returns 503 months later | STATE.md:134, REGISTER.md:73 | Confirm the payment provider supports the business's country before any billing code exists | intake |
 | L2 | 2026-07-08 | ui | Only a mobile phone is the field user's device; layouts broke on mobile across three fix rounds | Cursor 2026-08-09 screenshots | Name the primary device at intake; every layout change is done when a mobile screenshot is checked | intake |
-| L3 | 2026-07-08 | extension | DOM selectors matched only English labels and failed once the live site was Hebrew | fb extension fix | Name every UI language at intake; selectors, i18n and RTL rules follow from that answer | intake |
-| L4 | 2026-07-12 | env | The first three sessions were pure tooling bring-up (/login, /model, GitHub auth in Hebrew) before any feature | Codex threads 07-12 | Tooling/auth/CLI bring-up is its own tracked pre-flight checklist, separate from the first feature | intake |
+| L3 | 2026-07-08 | extension | DOM selectors matched only English labels and failed once the live site was in a right-to-left language | fb extension fix | Name every UI language at intake; selectors, i18n and RTL rules follow from that answer | intake |
+| L4 | 2026-07-12 | env | The first three sessions were pure tooling bring-up (/login, /model, GitHub auth in a non-English locale) before any feature | Codex threads 07-12 | Tooling/auth/CLI bring-up is its own tracked pre-flight checklist, separate from the first feature | intake |
 | L5 | 2026-07-30 | env | jq and ripgrep were missing on Windows and rediscovered missing in several sessions | claude-mem obs 07-30 | Audit and install the CLI toolchain once at setup; write the shell (PowerShell/Git Bash/WSL) into docs | intake |
 | L6 | 2026-07-19 | orchestration | "Do not write the code yourself" was enforced mid-project after friction; dispatch failures then cost more than direct fixes | history 07-19, claude-mem 08-01 | Decide the division of labor (who plans, who codes, which sandbox can run gates) at intake and record it | intake |
 | L7 | 2026-08-12 | process | A full session went to decoding Cursor's bucket-vs-wallet billing that was never verified before adoption | Cursor prompts 08-12 | Research a new paid tool's quota/billing model once, up front, and record it in the vault | intake |
@@ -33,7 +33,7 @@ Format: `| id | date | category | what happened | evidence | rule | stage |`
 | L15 | 2026-08-02 | domain | Enums, ownership, sharing levels and sellers arrived through dozens of later migrations; the extension froze the enum vocabulary as a contract | vault "Extension contract is frozen" | Freeze lifecycle enums and the role vocabulary at stage 1; treat later changes as contract changes needing owner approval | domain |
 | L16 | 2026-08-02 | db | All 377 imported clients got `created_at` = import date, corrupting recency for weeks | claude-mem 08-02 | Every imported entity maps a real source timestamp to `created_at`; spot-check for suspicious uniformity | domain |
 | L17 | 2026-07-31 | db | Source fields that looked meaningful by name (`dealType`, `Price`) were empty or contradictory on inspection | claude-mem 07-31 | Validate every source field's real value distribution before mapping it; never trust a name or a spec | domain |
-| L18 | 2026-08-01 | domain | Naive address matching found 4.9 % overlap; Hebrew spelling normalisation raised it to 92 % | claude-mem 08-01 | Before declaring a data link infeasible, rule out normalisation as the blocker | domain |
+| L18 | 2026-08-01 | domain | Naive address matching found 4.9 % overlap; local-language spelling normalisation raised it to 92 % | claude-mem 08-01 | Before declaring a data link infeasible, rule out normalisation as the blocker | domain |
 | L19 | 2026-08-02 | process | UI-polish tickets only became useful after 215 real properties and 377 real clients were loaded | Codex 08-02 | Seed a realistic data sample before UI-polish work so feedback comes from real density | domain |
 | L20 | 2026-07-19 | ui | Every invite failure was mapped to the rate-limit toast, hiding the real cause; a follow-up ticket keyed it on the status code | Codex R18/R18b | Map upstream errors to user messages by specific code from the first pass, never a catch-all bucket | domain |
 

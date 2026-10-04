@@ -1,6 +1,6 @@
 ---
 name: project-kickoff
-description: Staged pre-flight for building a new site or system with AI agents — intake, domain model, architecture/security, database, auth/environments, workspace/harness — then a recurring build-loop checklist. Asks one batched questionnaire per stage, generates the project's docs and agent harness from templates, and runs an advisory checker. Use when starting a new project, when the user says "kickoff", "new project", "set up the project", or "/project-kickoff status" mid-project. Lessons come from the Real Estate CRM build (references/lessons.md).
+description: Staged pre-flight for building a new site or system with AI agents — intake, domain model, architecture/security, database, auth/environments, workspace/harness — then a recurring build-loop checklist. Asks one batched questionnaire per stage, generates the project's docs and agent harness from templates, and runs an advisory checker. Use when starting a new project, when the user says "kickoff", "new project", "set up the project", or "/project-kickoff status" mid-project. Lessons come from a three-month multi-tenant CRM build (references/lessons.md).
 ---
 
 # Project Kickoff
@@ -25,8 +25,8 @@ Base directory of this skill: the folder holding this file. Templates are in `te
 5. **Generate, do not hand-write.** Collect the stage answers into `<project>/.kickoff/answers.json` (shape: `templates/answers.example.json`; keys are camelCase placeholder names, lists for the composite fields), then run `node <skill>/scripts/render.mjs <project-root> .kickoff/answers.json --stage <n>`. The renderer copies each template to its target, fills every `{{PLACEHOLDER}}` (`templates/PLACEHOLDERS.md`), derives the composite ones, and prints any left unfilled. Fix unfilled ones by adding the answer, never by editing the rendered file.
 6. **Never overwrite a deliverable that already exists.** `render.mjs` skips existing files; pass `--force` only when the user chose "regenerate". Commit `.kickoff/answers.json` (it holds no secrets) so `stage <n>` can re-render later.
 7. **No git, no deploy, no secrets.** The skill writes files. Committing, pushing, deploying and filling real `.env` values are the user's actions; list them under "Owner actions" at the end of each stage.
-8. **Vault.** At the end of stage 0 call the `vault-capture` skill to create `Projects/<name>/Overview.md` (if the vault skills exist on this machine). At the end of the run call `vault-sync`. Skip silently where those skills are absent (Codex/Cursor without the vault).
-9. **Owner's operating model** (from the vault): one approval gate per stage, no per-step permission prompts, no progress narration, finish each stage with a one-screen receipt: deliverables written, checker line, owner actions.
+8. **Notes vault (optional).** At the end of stage 0 call the `vault-capture` skill to create `Projects/<name>/Overview.md` (if the vault skills exist on this machine). At the end of the run call `vault-sync`. Skip silently where those skills are absent (Codex/Cursor without the vault).
+9. **Operating model:** one approval gate per stage, no per-step permission prompts, no progress narration, finish each stage with a one-screen receipt: deliverables written, checker line, owner actions.
 
 ## Stage loop
 

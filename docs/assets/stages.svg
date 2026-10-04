@@ -1,41 +1,41 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="980" height="300" viewBox="0 0 980 300" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13">
   <defs>
-    <marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#57606a"/></marker>
+    <marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#78716C"/></marker>
   </defs>
   <rect width="980" height="300" fill="#ffffff"/>
-  <rect x="14" y="14" width="800" height="170" rx="12" fill="#f4f6fb" stroke="#9aa7c7"/>
-  <text x="30" y="38" fill="#3b4a6b" font-weight="bold">PRE-FLIGHT — once per project, before any product code</text>
-  <g font-size="12" fill="#1f2937">
-    <rect x="30" y="54" width="118" height="110" rx="8" fill="#fff" stroke="#9aa7c7"/>
+  <rect x="14" y="14" width="800" height="170" rx="12" fill="#FEF3C7" stroke="#F59E0B"/>
+  <text x="30" y="38" fill="#1C1917" font-weight="bold">PRE-FLIGHT — once per project, before any product code</text>
+  <g font-size="12" fill="#1C1917">
+    <rect x="30" y="54" width="118" height="110" rx="8" fill="#fff" stroke="#F59E0B"/>
     <text x="89" y="74" text-anchor="middle" font-weight="bold">0 · Intake</text>
     <text x="89" y="96" text-anchor="middle">who, device,</text><text x="89" y="112" text-anchor="middle">languages,</text><text x="89" y="128" text-anchor="middle">country, stack</text>
-    <rect x="160" y="54" width="118" height="110" rx="8" fill="#fff" stroke="#9aa7c7"/>
+    <rect x="160" y="54" width="118" height="110" rx="8" fill="#fff" stroke="#F59E0B"/>
     <text x="219" y="74" text-anchor="middle" font-weight="bold">1 · Domain</text>
     <text x="219" y="96" text-anchor="middle">entities, roles,</text><text x="219" y="112" text-anchor="middle">FROZEN enums,</text><text x="219" y="128" text-anchor="middle">rules, dedup keys</text>
-    <rect x="290" y="54" width="118" height="110" rx="8" fill="#fff" stroke="#9aa7c7"/>
+    <rect x="290" y="54" width="118" height="110" rx="8" fill="#fff" stroke="#F59E0B"/>
     <text x="349" y="74" text-anchor="middle" font-weight="bold">2 · Architecture</text>
     <text x="349" y="96" text-anchor="middle">tenancy, RLS,</text><text x="349" y="112" text-anchor="middle">anon surface,</text><text x="349" y="128" text-anchor="middle">platform limits</text>
-    <rect x="420" y="54" width="118" height="110" rx="8" fill="#fff" stroke="#9aa7c7"/>
+    <rect x="420" y="54" width="118" height="110" rx="8" fill="#fff" stroke="#F59E0B"/>
     <text x="479" y="74" text-anchor="middle" font-weight="bold">3 · Database</text>
     <text x="479" y="96" text-anchor="middle">migration template,</text><text x="479" y="112" text-anchor="middle">auth hook, types,</text><text x="479" y="128" text-anchor="middle">runbook</text>
-    <rect x="550" y="54" width="118" height="110" rx="8" fill="#fff" stroke="#9aa7c7"/>
+    <rect x="550" y="54" width="118" height="110" rx="8" fill="#fff" stroke="#F59E0B"/>
     <text x="609" y="74" text-anchor="middle" font-weight="bold">4 · Auth &amp; env</text>
     <text x="609" y="96" text-anchor="middle">redirect URLs,</text><text x="609" y="112" text-anchor="middle">SMTP, OAuth,</text><text x="609" y="128" text-anchor="middle">env matrix</text>
-    <rect x="680" y="54" width="118" height="110" rx="8" fill="#fff" stroke="#9aa7c7"/>
+    <rect x="680" y="54" width="118" height="110" rx="8" fill="#fff" stroke="#F59E0B"/>
     <text x="739" y="74" text-anchor="middle" font-weight="bold">5 · Harness</text>
     <text x="739" y="96" text-anchor="middle">CLAUDE.md, hooks,</text><text x="739" y="112" text-anchor="middle">agents, gates,</text><text x="739" y="128" text-anchor="middle">worktrees, CI</text>
-    <g stroke="#57606a" stroke-width="1.5" marker-end="url(#a)">
+    <g stroke="#78716C" stroke-width="1.5" marker-end="url(#a)">
       <line x1="148" y1="109" x2="160" y2="109"/><line x1="278" y1="109" x2="290" y2="109"/><line x1="408" y1="109" x2="420" y2="109"/><line x1="538" y1="109" x2="550" y2="109"/><line x1="668" y1="109" x2="680" y2="109"/>
     </g>
   </g>
-  <rect x="830" y="14" width="136" height="170" rx="12" fill="#fff7ed" stroke="#f0883e"/>
-  <text x="898" y="40" text-anchor="middle" fill="#9a3412" font-weight="bold" font-size="12">each stage =</text>
-  <text x="898" y="66" text-anchor="middle" fill="#1f2937" font-size="12">1 batched</text><text x="898" y="82" text-anchor="middle" fill="#1f2937" font-size="12">questionnaire</text>
-  <text x="898" y="104" text-anchor="middle" fill="#1f2937" font-size="12">→ render.mjs</text><text x="898" y="120" text-anchor="middle" fill="#1f2937" font-size="12">writes files</text>
-  <text x="898" y="142" text-anchor="middle" fill="#1f2937" font-size="12">→ preflight.mjs</text><text x="898" y="158" text-anchor="middle" fill="#1f2937" font-size="12">READY / MISSING</text>
-  <line x1="739" y1="164" x2="739" y2="204" stroke="#57606a" stroke-width="1.5" marker-end="url(#a)"/>
+  <rect x="830" y="14" width="136" height="170" rx="12" fill="#FFFBEB" stroke="#D97706"/>
+  <text x="898" y="40" text-anchor="middle" fill="#92400E" font-weight="bold" font-size="12">each stage =</text>
+  <text x="898" y="66" text-anchor="middle" fill="#1C1917" font-size="12">1 batched</text><text x="898" y="82" text-anchor="middle" fill="#1C1917" font-size="12">questionnaire</text>
+  <text x="898" y="104" text-anchor="middle" fill="#1C1917" font-size="12">→ render.mjs</text><text x="898" y="120" text-anchor="middle" fill="#1C1917" font-size="12">writes files</text>
+  <text x="898" y="142" text-anchor="middle" fill="#1C1917" font-size="12">→ preflight.mjs</text><text x="898" y="158" text-anchor="middle" fill="#1C1917" font-size="12">READY / MISSING</text>
+  <line x1="739" y1="164" x2="739" y2="204" stroke="#78716C" stroke-width="1.5" marker-end="url(#a)"/>
   <rect x="14" y="204" width="952" height="82" rx="12" fill="#f6fbf4" stroke="#9ac79f"/>
   <text x="30" y="228" fill="#2f5d3a" font-weight="bold">BUILD LOOP — repeats for every feature</text>
-  <text x="30" y="256" fill="#1f2937" font-size="12">design/grill → ticket file (write scope + acceptance command) → own worktree → build → gates → cross-model verify → migration runbook → STATE.md → push branch for review</text>
-  <text x="30" y="274" fill="#57606a" font-size="11">every step cites a dated lesson in references/lessons.md · `/project-kickoff feature &lt;name&gt;` prints this list filled in</text>
+  <text x="30" y="256" fill="#1C1917" font-size="12">design/grill → ticket file (write scope + acceptance command) → own worktree → build → gates → cross-model verify → migration runbook → STATE.md → push branch for review</text>
+  <text x="30" y="274" fill="#78716C" font-size="11">every step cites a dated lesson in references/lessons.md · `/project-kickoff feature &lt;name&gt;` prints this list filled in</text>
 </svg>

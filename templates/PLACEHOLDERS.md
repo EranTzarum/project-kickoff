@@ -4,12 +4,12 @@ Replace every one of these when rendering. The checker flags any `{{...}}` left 
 
 | Placeholder | Meaning | Example (CRM) |
 |---|---|---|
-| `{{PROJECT_NAME}}` | human name | Real Estate CRM |
-| `{{PROJECT_SLUG}}` | kebab/lowercase id, also the vault `project:` slug | my-realestate-agency |
+| `{{PROJECT_NAME}}` | human name | Example CRM |
+| `{{PROJECT_SLUG}}` | kebab/lowercase id, also the vault `project:` slug | example-crm |
 | `{{ONE_LINER}}` | what it is, one sentence | multi-tenant CRM + public listings for brokers |
 | `{{PRIMARY_USER}}` | who uses it most, on what device | an agent in the field on a phone |
 | `{{LANGS}}` | UI languages, default first | he, en (RTL default) |
-| `{{COUNTRY}}` | where the business operates | Israel |
+| `{{COUNTRY}}` | where the business operates | Spain |
 | `{{STACK_PROFILE}}` | file name under references/stack-profiles | supabase-react-vercel |
 | `{{TENANT_TABLE}}` | the tenant root table | agencies |
 | `{{TENANT_KEY}}` | tenant FK column on every tenant table | agency_id |
@@ -42,4 +42,4 @@ Replace every one of these when rendering. The checker flags any `{{...}}` left 
 | `{{DEPLOY_CMD}}` | how prod deploys (from git only) | push to main |
 | `{{TYPES_TARGETS}}` | files that receive generated DB types | apps/web/src/lib/database.types.ts |
 | `{{DATE}}` | today, ISO | 2026-09-28 |
-| `{{VAULT_PATH}}` | Obsidian vault project folder or "none" | Projects/Real Estate CRM |
+| `{{VAULT_PATH}}` | notes-vault project folder or "none" | Projects/Example CRM |

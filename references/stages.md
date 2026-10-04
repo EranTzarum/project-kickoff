@@ -12,14 +12,14 @@ Purpose: fix the facts every later stage derives from, and set up the tracker so
 
 Questionnaire (one call):
 1. Project name + one-line purpose + who the primary user is and on what device. *(default: agent in the field on a phone)* — L2
-2. UI languages, default first; RTL? *(default: he, en; RTL)* — L3, L79
-3. Country of the business (drives payment provider, legal text, SMS/phone formats). *(default: Israel)* — L1
+2. UI languages, default first; RTL? *(default: en; no RTL)* — L3, L79
+3. Country of the business (drives payment provider, legal text, SMS/phone formats). *(no default: always ask)* — L1
 4. Stack profile: pick from `references/stack-profiles/`. *(default: supabase-react-vercel)*
 Second call only if needed:
 5. Who codes: orchestrator plans + workers implement *(default)*, or single agent end to end? Which worker sandboxes can run npm/tests? — L6, L72
 6. What "v1 done" means, in one sentence the owner would sign.
 
-Deliverables: `docs/KICKOFF.md` (tracker), `STATE.md`, vault `Projects/<name>/Overview.md` via `vault-capture` (Claude Code only).
+Deliverables: `docs/KICKOFF.md` (tracker), `STATE.md`, and optionally a notes-vault `Projects/<name>/Overview.md` via `vault-capture` (Claude Code, when installed).
 
 Exit checklist:
 - [ ] Tracker and STATE.md exist; STATE.md has a "mistakes already made" section — L69, L70

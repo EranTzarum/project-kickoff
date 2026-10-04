@@ -7,18 +7,18 @@
 **Make the expensive decisions while they're still cheap.**
 Ask the right questions *before* the first line of code. Generate the docs and guardrails. Never lose a lesson twice.
 
-[![Claude Code](https://img.shields.io/badge/Claude%20Code-skill-8A63D2)](#-quick-start)
-[![Codex CLI](https://img.shields.io/badge/Codex%20CLI-compatible-10a37f)](#-quick-start)
-[![Cursor](https://img.shields.io/badge/Cursor-compatible-000000)](#-quick-start)
-[![Node](https://img.shields.io/badge/node-%E2%89%A518-339933)](#-quick-start)
-[![Tests](https://img.shields.io/badge/tests-4%20passing-brightgreen)](#-verify)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-skill-F59E0B)](#install)
+[![Codex CLI](https://img.shields.io/badge/Codex%20CLI-compatible-D97706)](#install)
+[![Cursor](https://img.shields.io/badge/Cursor-compatible-1C1917)](#install)
+[![Node](https://img.shields.io/badge/node-%E2%89%A518-78716C)](#install)
+[![Tests](https://img.shields.io/badge/tests-4%20passing-F59E0B)](#verify)
+[![License: MIT](https://img.shields.io/badge/license-MIT-1C1917)](LICENSE)
 
 </div>
 
 ---
 
-## ⚡ TL;DR
+## At a glance
 
 | 🧑 You do | ⚙️ It does | 🎁 You get |
 |---|---|---|
@@ -33,7 +33,7 @@ Every question exists because something specific went wrong on a real three-mont
 
 ---
 
-## 🤔 Why
+## Why
 
 Building a multi-tenant CRM with Claude Code, Codex and Cursor took three months. In hindsight most of the
 time went to **preparation that arrived late**, not to code:
@@ -53,7 +53,7 @@ file a script can check, and generates the guardrail so the next project does no
 
 ---
 
-## ✨ Features
+## What it does
 
 - 🧭 **Six pre-flight stages, one batched questionnaire each** — 3–6 questions, defaults pre-filled, silence = default. No drip-fed interruptions.
 - 📄 **Answers become files** — `render.mjs` writes `DOMAIN.md`, `ARCHITECTURE.md`, `ENV_MATRIX.md`, `MIGRATION_RUNBOOK.md`, `STATE.md`, `CLAUDE.md`, hooks, agents, scripts and CI from templates. Nothing lives only in the chat.
@@ -66,7 +66,7 @@ file a script can check, and generates the guardrail so the next project does no
 
 ---
 
-## 🚀 Quick start
+## Install
 
 ```bash
 # 1. install (Claude Code)
@@ -103,7 +103,33 @@ defaults marked and waits for your reply. They also do not run Claude Code hooks
 
 ---
 
-## 🧭 Usage
+## Try it
+
+In an empty repo, type `/project-kickoff`. Stage 0 arrives as one short form, with defaults filled in:
+
+```text
+Stage 0 · Intake  (reply with changes only; silence = default)
+1. Name, one-line purpose, primary user and device   [field agent · phone]
+2. UI languages, default first; right-to-left?        [en · no RTL]
+3. Country of the business                            (no default - drives payments, legal text, phone formats)
+4. Stack profile                                      [supabase-react-vercel]
+```
+
+You answer *"a booking app for small clinics; receptionist on a desktop; Spain"*. A few seconds later:
+
+```text
+Stage 0 receipt
+  written   docs/KICKOFF.md · STATE.md
+  checker   STAGE 0: READY
+  owner     log in to the GitHub, hosting and database CLIs (agents can't do this for you)
+  next      Stage 1 · Domain & data model
+```
+
+Nothing is committed or deployed. Every file is yours to review.
+
+---
+
+## Usage
 
 | Command | What happens |
 |---|---|
@@ -131,7 +157,7 @@ them, and `docs/KICKOFF.md` keeps a dated log so they are never forgotten.
 
 ---
 
-## ⚙️ How it works
+## How it works
 
 ```mermaid
 sequenceDiagram
@@ -189,18 +215,18 @@ scripts/                     gates.mjs · db-types.mjs · worktree-setup.ps1/.sh
 
 ---
 
-## 📚 The lessons behind the checklist
+## The lessons behind the checklist
 
 [`references/lessons.md`](references/lessons.md) — **99 rows**, each with a date, a category, what happened,
 the evidence (commit hash, doc line or chat), the rule it produced and the stage that now owns it. Mined from a
-real project's git history (365 commits, 63 migrations), its docs, the author's decision vault, and the
+real project's git history (365 commits, 63 migrations), its docs, the author's decision notes, and the
 author's chat history across Claude Code, Codex and Cursor.
 
 ```mermaid
 flowchart LR
     G["git history"] --> L
     D["repo docs"] --> L
-    V["decision vault"] --> L
+    V["decision notes"] --> L
     C["chat history: Claude, Codex, Cursor"] --> L
     L[("lessons.md — 99 dated rows")] --> S["stages.md — questions and exit checklists"]
     L --> H["harness.md — which hook guards which lesson"]
@@ -214,7 +240,7 @@ membership table.
 
 ---
 
-## 🗂 Repository map
+## Repository map
 
 <details>
 <summary><b>Show the tree</b></summary>
@@ -242,7 +268,7 @@ docs/assets/                              images used by this README
 
 ---
 
-## 🧪 Verify
+## Verify
 
 ```bash
 node --test scripts/preflight.test.mjs
@@ -254,7 +280,7 @@ RLS and a function without a revoke are all reported; advisory mode always exits
 
 ---
 
-## 🧩 Extend
+## Extend
 
 - **New stack** — copy `references/stack-profiles/supabase-react-vercel.md`, change defaults and the limits sheet, add stack-specific templates and map them in `scripts/render.mjs` (`STAGE_FILES`).
 - **New lesson** — add a row to `references/lessons.md` with the next id, cite it from the owning stage in `references/stages.md`, and if it deserves a guardrail, add the template plus a row in `references/harness.md`.
@@ -262,7 +288,7 @@ RLS and a function without a revoke are all reported; advisory mode always exits
 
 ---
 
-## ❓ FAQ
+## FAQ
 
 <details><summary><b>Does it write code for my app?</b></summary>
 
@@ -296,8 +322,8 @@ Blocking recreates the per-step permission friction that makes agent work slow. 
 
 ---
 
-## 📄 License
+## License
 
 [MIT](LICENSE) © 2026 Eran Tzarum
 
-<div align="center"><sub>Ninety-nine lessons, learned once.</sub></div>
+<div align="center"><sub>Ninety-nine lessons, learned once, so you don't have to.</sub></div>

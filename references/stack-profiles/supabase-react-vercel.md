@@ -68,4 +68,4 @@ PORT
 - Hooks: block-env-edit, block-destructive-sql, service-role-guard, migration-number-check (all in `templates/claude/hooks`).
 - Agents: quality-gate (sonnet), rls-auditor (sonnet). Model-per-role: workers on the cheapest seat that passes gates; orchestrator on the frontier seat; verifier on a different family.
 - Workers: Codex CLI (Windows sandbox can crash; WSL more stable), Cursor agent (sandbox cannot run npm → orchestrator re-runs gates).
-- Memory: `STATE.md` in repo (what/where), Obsidian vault (why), Graphify for code structure. Never duplicate across them.
+- Memory: `STATE.md` in repo (what/where), a notes vault (why), Graphify for code structure. Never duplicate across them.
