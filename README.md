@@ -1,27 +1,28 @@
 <div align="center">
 
-# 🛫 project-kickoff
+<img src="docs/assets/logo.svg" alt="project-kickoff logo" width="112">
 
-**Pre-flight checklist skill for building sites and systems with AI coding agents.**
+# project-kickoff
+
+**Make the expensive decisions while they're still cheap.**
 Ask the right questions *before* the first line of code. Generate the docs and guardrails. Never lose a lesson twice.
 
-[![Claude Code](https://img.shields.io/badge/Claude%20Code-skill-8A63D2)](#install)
-[![Codex CLI](https://img.shields.io/badge/Codex%20CLI-compatible-10a37f)](#install)
-[![Cursor](https://img.shields.io/badge/Cursor-compatible-000000)](#install)
-[![Node](https://img.shields.io/badge/node-%E2%89%A518-339933)](#install)
-[![Tests](https://img.shields.io/badge/tests-4%20passing-brightgreen)](#verify)
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-skill-8A63D2)](#-quick-start)
+[![Codex CLI](https://img.shields.io/badge/Codex%20CLI-compatible-10a37f)](#-quick-start)
+[![Cursor](https://img.shields.io/badge/Cursor-compatible-000000)](#-quick-start)
+[![Node](https://img.shields.io/badge/node-%E2%89%A518-339933)](#-quick-start)
+[![Tests](https://img.shields.io/badge/tests-4%20passing-brightgreen)](#-verify)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 </div>
 
 ---
 
-## TL;DR
+## ⚡ TL;DR
 
-You type `/project-kickoff` in a fresh repo. The agent walks you through **six short questionnaires**
-(intake → domain → architecture → database → auth/env → workspace), turns your answers into the project's
-**real files** (docs, `CLAUDE.md`, hooks, sub-agents, gate runner, CI), and a tiny script tells you
-**what is still missing** at every step. After that, a **build-loop checklist** repeats for every feature.
+| 🧑 You do | ⚙️ It does | 🎁 You get |
+|---|---|---|
+| Type `/project-kickoff` in a fresh repo and answer **six short questionnaires** | Turns your answers into **real files** (docs, `CLAUDE.md`, hooks, sub-agents, gate runner, CI) and checks what's missing | A project that starts with its guardrails, plus a **build-loop checklist** for every feature |
 
 Every question exists because something specific went wrong on a real three-month build. There are
 **99 dated lessons** behind the checklist, and the agent can quote the one behind any rule.
@@ -32,12 +33,12 @@ Every question exists because something specific went wrong on a real three-mont
 
 ---
 
-## Why
+## 🤔 Why
 
 Building a multi-tenant CRM with Claude Code, Codex and Cursor took three months. In hindsight most of the
 time went to **preparation that arrived late**, not to code:
 
-| 🔥 What went wrong | 🕒 Found | 💸 Cost |
+| 🔥 What went wrong | 📍 Found | 💸 Cost |
 |---|---|---|
 | Auth redirect URLs, magic links and set-password flow misconfigured | day one, by a non-technical user | sessions of debugging |
 | Data model (enums, ownership, dedup keys) decided piecemeal | across 63 migrations | re-migrations, contract breaks |
@@ -54,14 +55,14 @@ file a script can check, and generates the guardrail so the next project does no
 
 ## ✨ Features
 
-- **Six pre-flight stages, one batched questionnaire each** — 3–6 questions, defaults pre-filled, silence = default. No drip-fed interruptions.
-- **Answers become files** — `render.mjs` writes `DOMAIN.md`, `ARCHITECTURE.md`, `ENV_MATRIX.md`, `MIGRATION_RUNBOOK.md`, `STATE.md`, `CLAUDE.md`, hooks, agents, scripts and CI from templates. Nothing lives only in the chat.
-- **Advisory checker** — `preflight.mjs` prints `READY` / `MISSING` per stage plus cross-checks (env keys vs matrix, tables without RLS, functions callable by anon). Never blocks; `--strict` for CI.
-- **Guardrails generated, not remembered** — four hooks (env-edit, destructive SQL, service-role, migration-number), two sub-agents (quality-gate, rls-auditor), a gate runner, a safe worktree script, a clean-clone CI workflow.
-- **Build-loop checklist per feature** — design → ticket → worktree → gates → cross-model verify → migration runbook → `STATE.md`.
-- **99 dated lessons with evidence** — every checklist item cites one. Ask *why* and get the commit, the doc line, or the chat that taught it.
-- **Stack profiles** — Supabase + React/Vite + Vercel ships as default with a platform-limits sheet; add your own in one file.
-- **Runs in Claude Code, Codex CLI and Cursor** — same folder, no build, no dependencies.
+- 🧭 **Six pre-flight stages, one batched questionnaire each** — 3–6 questions, defaults pre-filled, silence = default. No drip-fed interruptions.
+- 📄 **Answers become files** — `render.mjs` writes `DOMAIN.md`, `ARCHITECTURE.md`, `ENV_MATRIX.md`, `MIGRATION_RUNBOOK.md`, `STATE.md`, `CLAUDE.md`, hooks, agents, scripts and CI from templates. Nothing lives only in the chat.
+- 🔎 **Advisory checker** — `preflight.mjs` prints `READY` / `MISSING` per stage plus cross-checks (env keys vs matrix, tables without RLS, functions callable by anon). Never blocks; `--strict` for CI.
+- 🛡️ **Guardrails generated, not remembered** — four hooks (env-edit, destructive SQL, service-role, migration-number), two sub-agents (quality-gate, rls-auditor), a gate runner, a safe worktree script, a clean-clone CI workflow.
+- 🔁 **Build-loop checklist per feature** — design → ticket → worktree → gates → cross-model verify → migration runbook → `STATE.md`.
+- 📚 **99 dated lessons with evidence** — every checklist item cites one. Ask *why* and get the commit, the doc line, or the chat that taught it.
+- 🧱 **Stack profiles** — Supabase + React/Vite + Vercel ships as default with a platform-limits sheet; add your own in one file.
+- 🤝 **Runs in Claude Code, Codex CLI and Cursor** — same folder, no build, no dependencies.
 
 ---
 
@@ -79,7 +80,10 @@ node --test ~/.claude/skills/project-kickoff/scripts/preflight.test.mjs   # ℹ 
 ```
 
 Then answer the stage-0 questions. The agent renders the files, runs the checker, prints a one-screen receipt
-(files written · missing items · owner actions) and moves to stage 1 without asking permission again.
+(files written · missing items · owner actions) and moves on to stage 1.
+
+> [!TIP]
+> Already mid-project? Run `/project-kickoff status`. It only reports what's missing and changes nothing.
 
 <details>
 <summary><b>Install for Codex CLI and Cursor too</b></summary>
@@ -212,6 +216,9 @@ membership table.
 
 ## 🗂 Repository map
 
+<details>
+<summary><b>Show the tree</b></summary>
+
 ```
 SKILL.md                                  agent-facing instructions: modes, rules, stage loop
 agents/openai.yaml                        Codex display metadata
@@ -230,6 +237,8 @@ scripts/
   preflight.test.mjs                      node --test
 docs/assets/                              images used by this README
 ```
+
+</details>
 
 ---
 
@@ -255,20 +264,40 @@ RLS and a function without a revoke are all reported; advisory mode always exits
 
 ## ❓ FAQ
 
-**Does it write code for my app?** No. It writes preparation: docs, rules, hooks, scripts, CI. Product code starts after stage 5.
+<details><summary><b>Does it write code for my app?</b></summary>
 
-**Will it overwrite my files?** No. `render.mjs` skips anything that exists; `--force` is explicit.
+No. It writes preparation: docs, rules, hooks, scripts, CI. Product code starts after stage 5.
+</details>
 
-**Does it commit, deploy or touch secrets?** No. Those stay human actions and are listed as owner actions.
+<details><summary><b>Will it overwrite my files?</b></summary>
 
-**Is it Supabase-only?** The stages are stack-agnostic; the default profile is Supabase + React/Vite + Vercel because that is where the lessons came from. Add a profile for your stack.
+No. `render.mjs` skips anything that exists; `--force` is explicit.
+</details>
 
-**What if I already have a project?** Run `/project-kickoff status`. It prints one MISSING line for the tracker and changes nothing; you can then backfill stage by stage.
+<details><summary><b>Does it commit, deploy or touch secrets?</b></summary>
 
-**Why advisory instead of blocking?** Blocking recreates the per-step permission friction that makes agent work slow. A MISSING line is a to-do you can see; CI gets `--strict`.
+No. Those stay human actions and are listed as owner actions.
+</details>
+
+<details><summary><b>Is it Supabase-only?</b></summary>
+
+The stages are stack-agnostic; the default profile is Supabase + React/Vite + Vercel because that is where the lessons came from. Add a profile for your stack.
+</details>
+
+<details><summary><b>What if I already have a project?</b></summary>
+
+Run `/project-kickoff status`. It prints one MISSING line for the tracker and changes nothing; you can then backfill stage by stage.
+</details>
+
+<details><summary><b>Why advisory instead of blocking?</b></summary>
+
+Blocking recreates the per-step permission friction that makes agent work slow. A MISSING line is a to-do you can see; CI gets `--strict`.
+</details>
 
 ---
 
 ## 📄 License
 
 [MIT](LICENSE) © 2026 Eran Tzarum
+
+<div align="center"><sub>Ninety-nine lessons, learned once.</sub></div>
