@@ -6,14 +6,17 @@
 import { existsSync, readdirSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { basename, dirname } from "node:path";
-import { writeTargets } from "./_shell.js";
+import { writeCandidates } from "./_shell.js";
 
 let input = "";
 process.stdin.on("data", (chunk) => (input += chunk));
 process.stdin.on("end", () => {
   const { tool_input } = JSON.parse(input || "{}");
-  const paths = [tool_input?.file_path ?? "", ...writeTargets(tool_input?.command ?? "")].map((p) => p.replaceAll("\\", "/"));
-  for (const path of paths) check(path);
+  const cands = [tool_input?.file_path ?? "", ...writeCandidates(tool_input?.command ?? "")].map((p) => p.replaceAll("\\", "/"));
+  // `cp 0001_b.sql supabase/migrations` names only the directory: pair it with each migration-looking basename.
+  const dirs = cands.filter((c) => /(^|\/)supabase\/migrations\/?$/.test(c)).map((d) => d.replace(/\/$/, ""));
+  const names = cands.map((c) => c.split("/").pop()).filter((b) => /^[0-9]{4,14}[_-][^/]+\.sql$/.test(b));
+  for (const path of [...cands, ...dirs.flatMap((d) => names.map((n) => `${d}/${n}`))]) check(path);
   process.exit(0);
 });
 
