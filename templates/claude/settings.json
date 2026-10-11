@@ -5,9 +5,11 @@
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/block-destructive-sql.js\"" }
+          { "type": "command", "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/block-destructive-sql.js\"" },
+          { "type": "command", "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/block-env-edit.js\"" },
+          { "type": "command", "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/migration-number-check.js\"" }
         ],
-        "description": "Block destructive raw SQL (DROP/TRUNCATE/DELETE without WHERE) run from a shell"
+        "description": "Block destructive raw SQL run from a shell, and shell writes to real .env files or to a migration with a taken prefix"
       },
       {
         "matcher": "Edit|Write",
