@@ -12,6 +12,10 @@ if (!block) {
   process.exit(1);
 }
 const commands = block[1].split(/\r?\n/).map((l) => l.trim()).filter((l) => l && !l.startsWith("#"));
+if (commands.length === 0) {
+  console.error("The ```gates block in docs/KICKOFF.md is empty");
+  process.exit(1);
+}
 
 let failed = 0;
 for (const cmd of commands) {

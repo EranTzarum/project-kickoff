@@ -49,6 +49,18 @@ for (const s of stages) {
   else console.log(`${label}: READY`);
 }
 
+// ---- strict: the manifest must be complete ----
+if (strict) {
+  const names = ["INTAKE", "DOMAIN", "ARCHITECTURE", "DATABASE", "AUTH & ENVIRONMENTS", "WORKSPACE & HARNESS"];
+  for (let n = 0; n <= 5; n++) {
+    const s = stages.find((x) => x.n === n);
+    if (!s) { problems++; console.log(`STAGE ${n} ${names[n]}: MISSING — stage absent from docs/KICKOFF.md`); }
+    else if (s.paths.length === 0) { problems++; console.log(`STAGE ${n} ${names[n]}: MISSING — no deliverables listed`); }
+  }
+  const gates = read("docs/KICKOFF.md").match(/```gates\n([\s\S]*?)```/)?.[1] ?? "";
+  if (!gates.split("\n").some((l) => l.trim() && !l.trim().startsWith("#"))) { problems++; console.log("CHECK gates: docs/KICKOFF.md has no gate commands"); }
+}
+
 // ---- cross-check: env keys ----
 if (existsSync(join(root, ".env.example")) && existsSync(join(root, "docs/ENV_MATRIX.md"))) {
   const exampleKeys = new Set(read(".env.example").split("\n").map((l) => l.match(/^([A-Z][A-Z0-9_]*)=/)?.[1]).filter(Boolean));
