@@ -4,7 +4,8 @@
 // real shell parser only if a bypass shows up in practice.
 
 // Split on ; & && | || newline ( ) and backtick, outside quotes. `piped` = fed by the previous segment.
-export function segments(command) {
+// The body of `bash -c "..."` / `pwsh -Command "..."` is split too and appended after its wrapper.
+export function segments(command, depth = 0) {
   const out = [];
   let cur = "", quote = "", piped = false;
   const push = (nextPiped) => {
@@ -34,19 +35,36 @@ export function segments(command) {
     cur += c;
   }
   push(false);
-  return out;
+  return depth >= 3 ? out : out.flatMap((s) => [s, ...inner(s.text, depth)]);
 }
 
-const WRITERS = /^(cp|mv|tee|install|dd|ln|rsync|touch|truncate|set-content|add-content|out-file|copy-item|move-item|new-item)$/i;
+const WRAPPER = /^(bash|sh|zsh|dash|ksh|pwsh|powershell|cmd)(\.exe)?\s/i;
+function inner(text, depth) {
+  if (!WRAPPER.test(text)) return [];
+  const m = text.match(/\s(?:-\w*c|-command|\/c)\s+(["'])([\s\S]*)\1\s*$/i);
+  return m ? segments(m[1] === '"' ? m[2].replace(/\\(["\\$`])/g, "$1") : m[2], depth + 1) : [];
+}
 
-// Words from every segment that writes (redirect, cp/mv/tee..., sed -i, perl -i): candidate target paths.
+const words = (s) => s.split(/\s+/).filter(Boolean).map((w) => w.replace(/^["']|["']$/g, "").replaceAll("\\", "/"));
+const positional = (ws) => ws.slice(1).filter((w) => !w.startsWith("-"));
+
+// Paths a command writes to: redirect targets plus the destination operands of cp/mv/tee/dd/touch,
+// sed -i, perl -i and the PowerShell writers. Sources that are only read are not returned.
 export function writeTargets(command) {
   const out = [];
   for (const { text } of segments(command)) {
     const t = text.replace(/\d*>&\d*|\d*>\s*\/dev\/null/g, "");
-    const words = t.split(/[\s<>|]+/).filter(Boolean).map((w) => w.replace(/^["']|["']$/g, "").replaceAll("\\", "/"));
-    const inPlace = /^(sed|perl)$/i.test(words[0] ?? "") && /\s-\w*i/.test(t);
-    if (t.includes(">") || WRITERS.test(words[0] ?? "") || inPlace) out.push(...words);
+    for (const m of t.matchAll(/>>?\|?\s*([^\s;&|<>]+)/g)) out.push(m[1].replace(/^["']|["']$/g, "").replaceAll("\\", "/"));
+    const ws = words(t.replace(/>>?\|?\s*[^\s;&|<>]+|<\s*[^\s;&|<>]+/g, " "));
+    const cmd = (ws[0] ?? "").toLowerCase();
+    const args = positional(ws);
+    if (/^(cp|install|ln|rsync|copy-item|move-item)$/.test(cmd)) {
+      if (args.length) out.push(args.at(-1));
+      const dir = t.match(/(?:\s-t\s+|--target-directory[= ]|\s-destination\s+)(\S+)/i)?.[1];
+      if (dir) out.push(dir.replace(/^["']|["']$/g, ""));
+    } else if (/^(mv|tee|touch|truncate|set-content|add-content|out-file|new-item)$/.test(cmd)) out.push(...args);
+    else if (cmd === "dd") out.push(...ws.filter((w) => w.startsWith("of=")).map((w) => w.slice(3)));
+    else if (/^(sed|perl)$/.test(cmd) && /\s-\w*i/.test(t)) out.push(...args);
   }
   return out;
 }

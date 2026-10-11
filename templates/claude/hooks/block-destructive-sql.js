@@ -17,10 +17,10 @@ process.stdin.on("end", () => {
   const command = tool_input?.command ?? "";
 
   // Judge every segment on its own: `echo ready; psql -c "DROP TABLE t"` must not pass because
-  // the line starts with echo. A segment piped from a read-only one is scanned together with it
-  // (`echo "DROP TABLE t" | psql`).
+  // the line starts with echo. A segment is scanned together with everything piped into it
+  // (`echo "DROP TABLE t" | cat | psql`).
   const isReadOnly = (text) =>
-    /^(grep|rg|sed|cat|echo|head|tail|less|select-string|findstr)$/i.test(text.split(/\s+/)[0] ?? "") ||
+    /^(grep|rg|sed|cat|echo|head|tail|less|wc|sort|uniq|cut|tr|ls|select-string|findstr)$/i.test(text.split(/\s+/)[0] ?? "") ||
     /^git\s+grep\b/i.test(text);
 
   const patterns = [
@@ -31,9 +31,11 @@ process.stdin.on("end", () => {
 
   const segs = segments(command);
   let hit;
-  segs.forEach(({ text, piped }, i) => {
+  segs.forEach(({ text }, i) => {
     if (hit || isReadOnly(text)) return;
-    const scan = piped && i > 0 ? `${segs[i - 1].text}\n${text}` : text;
+    let start = i;
+    while (segs[start].piped && start > 0) start--;
+    const scan = segs.slice(start, i + 1).map((x) => x.text).join("\n");
     hit = patterns.find((p) => p.test(scan));
   });
   if (hit) {

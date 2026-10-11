@@ -28,6 +28,7 @@ const STAGE_FILES = {
     ["docs/CLAUDE.md", "AGENTS.md"],
     ["claude/settings.json", ".claude/settings.json"],
     ["claude/hooks/_shell.js", ".claude/hooks/_shell.js"],
+    ["claude/hooks/package.json", ".claude/hooks/package.json"],
     ["claude/hooks/block-env-edit.js", ".claude/hooks/block-env-edit.js"],
     ["claude/hooks/block-destructive-sql.js", ".claude/hooks/block-destructive-sql.js"],
     ["claude/hooks/service-role-guard.js", ".claude/hooks/service-role-guard.js"],
