@@ -39,6 +39,8 @@ Advisory only: a MISSING line is a to-do, not a stop sign. `--strict` is for CI.
 |---|---|
 | Rules file | `CLAUDE.md` |
 | Hooks config | `.claude/settings.json` |
+| Shell command splitter (shared by the Bash guards) | `.claude/hooks/_shell.js` |
+| Module scope for the hooks (works in CommonJS projects) | `.claude/hooks/package.json` |
 | Env-edit guard | `.claude/hooks/block-env-edit.js` |
 | Destructive SQL guard | `.claude/hooks/block-destructive-sql.js` |
 | Service-role guard | `.claude/hooks/service-role-guard.js` |

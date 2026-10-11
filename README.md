@@ -272,7 +272,7 @@ docs/assets/                              images used by this README
 ## Verify
 
 ```bash
-node --test scripts/preflight.test.mjs
+node --test scripts/preflight.test.mjs scripts/hooks.test.mjs scripts/render.test.mjs
 ```
 
 The test renders the example answers into a temp folder and proves: every stage READY after a full render;

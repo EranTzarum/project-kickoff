@@ -21,6 +21,8 @@ const EXPECTED = [
   ".claude/hooks/migration-number-check.js", ".claude/hooks/service-role-guard.js",
   ".claude/agents/quality-gate.md", ".claude/agents/rls-auditor.md",
   "scripts/gates.mjs", "scripts/preflight.mjs", ".github/workflows/gates.yml",
+  "supabase/migrations/00000000000000_auth_hook.sql", "CLAUDE.md", "AGENTS.md", "scripts/worktree-setup.ps1",
+  "scripts/worktree-setup.sh", ".github/workflows/keepalive.yml", ".claude/hooks/_shell.js", ".claude/hooks/package.json",
 ];
 
 test("full render writes every deliverable and leaves no placeholder", () => {

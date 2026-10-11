@@ -26,28 +26,25 @@ session; ask it to update the project-kickoff rows after a big change.
 
 ## Open items, best first
 
-1. **Issue #2: guardrail hooks can be bypassed.** Reproduced; found by an outside second-opinion review.
-   - The SQL hook (`templates/.../block-destructive-sql.js`) skips the whole command when its first
-     word looks read-only: `echo ready; psql -c "DROP TABLE accounts"` passes.
-   - The env-edit and migration hooks match only `Edit|Write` (`templates/claude/settings.json`), so
-     shell writes (redirection, `cp`, `sed -i`) bypass them.
+Done 2026-10-11: strict preflight and gate-runner fixes (PR #5, issue #1); render end-to-end test (PR #7);
+hook bypass fix as an allowlist (issue #2, see below).
 
-   Fix:
-   - Scan every command segment (split on `;`, `&&`, `||`, `|` and newlines; respect quotes).
-   - Add Bash-side checks for env and migration paths.
-   - Add tests for the bypasses above.
-2. **Issue #2, second part: `preflight --strict` passes an incomplete project.** It accepts a
-   manifest with missing items and an empty gate list. `--strict` should fail on both; add tests.
-3. **No end-to-end test of `render.mjs`.** Only `preflight` has tests. Add a render test with
-   `templates/answers.example.json` that checks the files written and that existing files are not
-   overwritten without `--force`.
-4. **Has not been used on a new project since it was anonymized.** The next real kickoff should
+1. **Issue #3: AGENTS.md as the only instruction file in generated projects.** `render.mjs` still writes
+   `CLAUDE.md` plus an `AGENTS.md` copy; touch points are listed in the issue. Add a lesson before the rule.
+2. **Has not been used on a new project since it was anonymized.** The next real kickoff should
    record what was missing in a lesson and a rule.
+
+**Hook design (issue #2).** The Bash guards are an allowlist, not a shell parser: protected text (destructive
+SQL, a real `.env`, a migration path) anywhere in the command blocks it unless the command is built only from
+read-only commands (`templates/claude/hooks/_shell.js`). Three review rounds on a parsing design kept finding
+new spellings (`bash -cl`, `>|`, `dd of=`, `sort -o`), so do not go back to parsing destinations. Known false
+positives (`cp .env backup`, `sed` over SQL text): the owner overrides by hand; add a reader to the list in
+`_shell.js` if one keeps recurring.
 
 ## Gate
 
 ```bash
-node --test scripts/preflight.test.mjs
+node --test scripts/preflight.test.mjs scripts/hooks.test.mjs scripts/render.test.mjs
 node ~/.claude/skills/readmelyzer/scripts/check-readme.mjs . --public --all-files
 ```
 

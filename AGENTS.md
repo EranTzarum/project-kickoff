@@ -9,7 +9,7 @@ User-facing docs: `README.md`. Agent instructions: `SKILL.md`.
 - `SKILL.md`: modes, rules, stage loop.
 - `references/`: `stages.md` (questionnaire, deliverables, exit checklist per stage), `lessons.md` (99 lessons), `harness.md`, `stack-profiles/`.
 - `templates/`: files rendered into a project; `PLACEHOLDERS.md` lists every placeholder.
-- `scripts/render.mjs` (answers → files, skips existing), `scripts/preflight.mjs` (advisory checker), `scripts/preflight.test.mjs`.
+- `scripts/render.mjs` (answers → files, skips existing), `scripts/preflight.mjs` (advisory checker), `scripts/preflight.test.mjs`, `scripts/hooks.test.mjs`, `scripts/render.test.mjs`.
 
 ## Rules
 
@@ -25,7 +25,7 @@ User-facing docs: `README.md`. Agent instructions: `SKILL.md`.
 ## Gate
 
 ```bash
-node --test scripts/preflight.test.mjs
+node --test scripts/preflight.test.mjs scripts/hooks.test.mjs scripts/render.test.mjs
 node ~/.claude/skills/readmelyzer/scripts/check-readme.mjs . --public --all-files
 ```
 
