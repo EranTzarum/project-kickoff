@@ -1,13 +1,13 @@
 # project-kickoff: takeover
 
-For the session that continues project-kickoff. Read this first, then `CLAUDE.md`, `SKILL.md`, and
+For the session that continues project-kickoff. Read this first, then `AGENTS.md`, `SKILL.md`, and
 `references/stages.md`.
 
 ## Where this session lives
 
 The session's working folder is the **umbrella** workspace folder, so it is listed with the
 manager in the app sidebar. It works **only inside `project-kickoff/`**: edits, commits and pushes
-happen in this repo. The umbrella files (`CLAUDE.md`, `README.md`, `docs/`) belong to the manager
+happen in this repo. The umbrella files (`AGENTS.md`, `README.md`, `docs/`) belong to the manager
 session; ask it to update the project-kickoff rows after a big change.
 
 ## State (2026-10-07)
@@ -22,7 +22,7 @@ session; ask it to update the project-kickoff rows after a big change.
   - A build-loop checklist runs per feature.
   - Every rule cites a lesson in `references/lessons.md` (99 lessons, anonymized).
 - **Last work (2026-10-04):** anonymized for public sharing, README redesigned with readmelyzer,
-  `CLAUDE.md` and `AGENTS.md` with gates added.
+  `AGENTS.md` with gates added (CLAUDE.md merged into it 2026-10-11).
 
 ## Open items, best first
 
