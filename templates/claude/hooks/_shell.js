@@ -30,17 +30,25 @@ export function segments(command) {
   return out;
 }
 
-// Commands that only read the files they are given.
-export const FILE_READERS = new Set(["cat", "type", "head", "tail", "less", "more", "grep", "rg", "wc", "ls", "file", "stat",
-  "diff", "cmp", "findstr", "select-string", "get-content"]);
+// Commands that only read the files they are given. Left out on purpose: less/more (-o writes),
+// file (-C writes), sort (-o, --compress-program run things), find, xargs, sed, awk.
+export const FILE_READERS = new Set(["cat", "type", "head", "tail", "grep", "rg", "wc", "ls", "stat", "diff", "cmp",
+  "findstr", "select-string", "get-content"]);
 // Commands that only print or filter text; enough to mention SQL without running it.
-export const TEXT_READERS = new Set([...FILE_READERS, "echo", "printf", "sort", "uniq", "cut", "tr"]);
+export const TEXT_READERS = new Set([...FILE_READERS, "echo", "printf", "uniq", "cut", "tr"]);
 
-// True when every segment starts with an allowed command (also `git grep`) and, if noRedirect,
-// nothing is redirected to a file. 2>&1 and >/dev/null do not count as redirects.
+// Options that make an otherwise read-only command run another program (rg --pre, git grep -O).
+const EXEC_OPTION = /\s(--pre\b|--pre-glob\b|--hostname-bin\b|--open-files-in-pager\b|-O\S*)/;
+
+// True when every segment starts with an allowed command (also `git grep`), none carries an
+// exec-capable option, no command substitution appears anywhere (also inside double quotes, where
+// bash still runs it) and, if noRedirect, nothing is redirected to a file. Only complete fd
+// duplications (2>&1, >&2) and >/dev/null do not count as redirects; `>&file` does.
 export function readsOnly(command, allowed, noRedirect) {
-  const text = command.replace(/\d*>&\d*|\d*>\s*\/dev\/null/g, "");
+  if (/\$\(|`|[<>]\(/.test(command)) return false;
+  const text = command.replace(/\d*>&(\d+|-)(?=$|[\s;|&)])|\d*>\s*\/dev\/null(?=$|[\s;|&)])/g, "");
   if (noRedirect && text.includes(">")) return false;
   const segs = segments(text);
-  return segs.length > 0 && segs.every((s) => allowed.has(s.split(/\s+/)[0].toLowerCase()) || /^git\s+grep\b/i.test(s));
+  return segs.length > 0 && segs.every((s) =>
+    (allowed.has(s.split(/\s+/)[0].toLowerCase()) || /^git\s+grep\b/i.test(s)) && !EXEC_OPTION.test(s));
 }

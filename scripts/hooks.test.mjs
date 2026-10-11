@@ -29,6 +29,11 @@ test("sql: destructive SQL after a read-only first word is blocked", () => {
     'echo "DROP TABLE accounts" | (cat) | psql',
     'psql -c "delete from accounts" && grep where notes.txt',
     'echo "DROP TABLE accounts" |& psql',
+    `echo "$(psql -c 'DROP TABLE accounts')"`,
+    "echo `psql -c 'DROP TABLE accounts'`",
+    `git grep --open-files-in-pager="psql -c 'DROP TABLE accounts'" needle`,
+    `git grep -O"psql -c 'DROP TABLE accounts'" needle`,
+    `rg --pre=./run-sql 'DROP TABLE accounts' .`,
   ], 2);
 });
 
@@ -36,7 +41,7 @@ test("sql: read-only mentions and harmless commands still pass", () => {
   all("block-destructive-sql.js", [
     'grep -rn "drop table" supabase/',
     'rg "delete from" . 2>&1 | head -5',
-    'rg "delete from" . | sort | uniq | wc -l',
+    'rg "delete from" . | uniq | wc -l',
     'echo "DROP TABLE accounts" > migration-draft.sql',
     'echo "a; b" && psql -c "select 1"',
     'git grep "truncate table" -- docs',
@@ -53,6 +58,8 @@ test("env: any non-read-only command that names a real .env, and redirects to on
     'bash -c "cp example .env"', "bash -c 'cp example .env' arg0", '/bin/bash -c "cp example .env"', "sh -c 'echo K=1 > .env'",
     "cat .env > /tmp/env-backup", "sed -n p .env", "printf K=1 >|.env", "sort -o .env values.txt", "sed 'w .env' values.txt",
     "bash -cl 'printf K=1 > .env'", "env bash -c 'printf K=1 > .env'", "Set-Content -Path .env -Value x",
+    'cat "$(cp .env.example .env)"', "cat `cp .env.example .env`", "cat .env.example >&.env", "cat .env.example &>.env",
+    "rg --pre=./rewrite-env K .env", "sort --compress-program=./rewrite-env .env",
   ], 2);
   assert.equal(exitOf("block-env-edit.js", { file_path: "apps/web/.env" }), 2, "Edit/Write path still blocked");
 });
@@ -81,6 +88,8 @@ test("migrations: shell writes to a taken prefix are blocked; fresh prefix, exis
     '/bin/bash -c "cp x.sql supabase/migrations/0001_g.sql" extra',
     "printf x >|supabase/migrations/0001_i.sql",
     "env bash -c 'cp x.sql supabase/migrations/0001_j.sql'",
+    "cat draft.sql >&supabase/migrations/0001_k.sql",
+    'cat "$(cp x.sql supabase/migrations/0001_l.sql)"',
   ], 2, dir);
   all(h, [
     "echo 'select 2;' > supabase/migrations/0002_b.sql",

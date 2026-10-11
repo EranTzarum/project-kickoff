@@ -14,7 +14,7 @@ process.stdin.on("end", () => {
   const path = (tool_input?.file_path ?? "").replaceAll("\\", "/");
   const command = (tool_input?.command ?? "").replaceAll("\\", "/");
 
-  const named = [...command.matchAll(/(?:^|[\s"'=/<>:;|&(])(\.env(?:\.[\w.-]+)?)(?=$|[\s"'<>;|&)])/g)].map((m) => m[1]).find(isEnv);
+  const named = [...command.matchAll(/(?:^|[\s"'=/<>:;|&(`])(\.env(?:\.[\w.-]+)?)(?=$|[\s"'<>;|&)`])/g)].map((m) => m[1]).find(isEnv);
   const target = isEnv(path) ? path : named && !readsOnly(command, FILE_READERS, true) ? named : null;
 
   if (target) {

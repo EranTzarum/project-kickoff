@@ -17,9 +17,9 @@ process.stdin.on("end", () => {
   // Bash: every migration path named in a command that is not read-only. `cp 0001_b.sql supabase/migrations`
   // names only the directory, so pair it with each migration-looking file name in the command.
   if (command && !readsOnly(command, FILE_READERS, true)) {
-    paths.push(...(command.match(/[^\s"'=<>;|&(]*supabase\/migrations\/[^\s"'<>;|&)]+/g) ?? []));
-    const dirs = command.match(/[^\s"'=<>;|&(]*supabase\/migrations\/?(?=$|[\s"'<>;|&)])/g) ?? [];
-    const names = command.match(/[0-9]{4,14}[_-][^\s"'/<>;|&)]+\.sql/g) ?? [];
+    paths.push(...(command.match(/[^\s"'=<>;|&(`]*supabase\/migrations\/[^\s"'<>;|&)`]+/g) ?? []));
+    const dirs = command.match(/[^\s"'=<>;|&(`]*supabase\/migrations\/?(?=$|[\s"'<>;|&)`])/g) ?? [];
+    const names = command.match(/[0-9]{4,14}[_-][^\s"'/<>;|&)`]+\.sql/g) ?? [];
     for (const d of dirs) for (const n of names) paths.push(`${d.replace(/\/$/, "")}/${n}`);
   }
   for (const path of paths) check(path);
