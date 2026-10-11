@@ -4,7 +4,7 @@
 //
 // False-positive fixes learned on the CRM: the Tailwind class `truncate` and grep/sed
 // patterns that merely *mention* "delete from" used to trip this hook. So:
-//   * a command built only from text readers (grep/rg/cat/echo/git grep/Select-String/findstr ...)
+//   * a command built only from text readers (grep/rg/cat/echo/Select-String/findstr ...)
 //     may mention SQL; if anything else is in the line (psql, bash -c, a pipe into a shell ...)
 //     and a segment contains destructive SQL, it is blocked. Patterns are matched per segment so a
 //     later `where` in the line cannot excuse an earlier DELETE.

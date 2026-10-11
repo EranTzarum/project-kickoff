@@ -33,6 +33,8 @@ test("sql: destructive SQL after a read-only first word is blocked", () => {
     "echo `psql -c 'DROP TABLE accounts'`",
     `git grep --open-files-in-pager="psql -c 'DROP TABLE accounts'" needle`,
     `git grep -O"psql -c 'DROP TABLE accounts'" needle`,
+    `git grep -nO"psql -c 'DROP TABLE accounts'" needle`,
+    `git grep "drop table" -- docs`,
     `rg --pre=./run-sql 'DROP TABLE accounts' .`,
     `git grep "--open-files-in-pager=psql -c 'DROP TABLE accounts'" needle`,
     `rg "--pre=./run-sql" 'DROP TABLE accounts' .`,
@@ -47,7 +49,7 @@ test("sql: read-only mentions and harmless commands still pass", () => {
     'rg "delete from" . | uniq | wc -l',
     'echo "DROP TABLE accounts" > migration-draft.sql',
     'echo "a; b" && psql -c "select 1"',
-    'git grep "truncate table" -- docs',
+    "rg \"truncate table\" -- docs",
     "npm test 2>&1",
   ], 0);
 });
@@ -62,7 +64,7 @@ test("env: any non-read-only command that names a real .env, and redirects to on
     "cat .env > /tmp/env-backup", "sed -n p .env", "printf K=1 >|.env", "sort -o .env values.txt", "sed 'w .env' values.txt",
     "bash -cl 'printf K=1 > .env'", "env bash -c 'printf K=1 > .env'", "Set-Content -Path .env -Value x",
     'cat "$(cp .env.example .env)"', "cat `cp .env.example .env`", "cat .env.example >&.env", "cat .env.example &>.env",
-    "rg --pre=./rewrite-env K .env", 'rg "--pre=./rewrite-env" K .env', "git grep -O'./rewrite-env' K .env","sort --compress-program=./rewrite-env .env",
+    "rg --pre=./rewrite-env K .env", 'rg "--pre=./rewrite-env" K .env', "git grep -O'./rewrite-env' K .env", "git grep -nO'./rewrite-env' K .env", "sort --compress-program=./rewrite-env .env",
   ], 2);
   assert.equal(exitOf("block-env-edit.js", { file_path: "apps/web/.env" }), 2, "Edit/Write path still blocked");
 });
