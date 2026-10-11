@@ -4,7 +4,7 @@
 // a placeholder left behind is reported; env drift and a migration without RLS are caught.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, unlinkSync, writeFileSync, appendFileSync } from "node:fs";
+import { mkdtempSync, rmSync, unlinkSync, writeFileSync, appendFileSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -51,6 +51,36 @@ test("leftover placeholder, env drift and a table without RLS are reported", () 
   assert.match(r.stdout, /CHECK migrations: 202601010000_bad\.sql creates table leaky without enabling RLS/);
   assert.match(r.stdout, /CHECK migrations: 202601010000_bad\.sql creates function f\(\) without a revoke/);
   assert.equal(r.status, 0, "advisory mode never fails");
+  rmSync(dir, { recursive: true, force: true });
+});
+
+const kickoffOf = (dir) => readFileSync(join(dir, "docs/KICKOFF.md"), "utf8").replace(/\r\n/g, "\n");
+
+test("strict: a manifest with only stage 0 fails; advisory still exits 0", () => {
+  const dir = freshProject();
+  writeFileSync(join(dir, "docs/KICKOFF.md"), kickoffOf(dir).split("## Stage 1")[0] + "## Gates\n```gates\nnpm test\n```\n");
+  const r = run("preflight.mjs", dir, "--strict");
+  assert.equal(r.status, 1);
+  assert.match(r.stdout, /^STAGE 5 WORKSPACE & HARNESS: MISSING — stage absent/m);
+  assert.equal(run("preflight.mjs", dir).status, 0);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("strict: an unparseable KICKOFF.md fails", () => {
+  const dir = freshProject();
+  writeFileSync(join(dir, "docs/KICKOFF.md"), "nothing useful here\n");
+  assert.equal(run("preflight.mjs", dir, "--strict").status, 1);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("strict: an empty gates block fails, and so does gates.mjs", () => {
+  const dir = freshProject();
+  writeFileSync(join(dir, "docs/KICKOFF.md"), kickoffOf(dir).replace(/```gates\n[\s\S]*?```/, "```gates\n```"));
+  const r = run("preflight.mjs", dir, "--strict");
+  assert.equal(r.status, 1);
+  assert.match(r.stdout, /^CHECK gates: /m);
+  const g = spawnSync(process.execPath, [join(dir, "scripts/gates.mjs")], { cwd: dir, encoding: "utf8" });
+  assert.equal(g.status, 1, g.stdout + g.stderr);
   rmSync(dir, { recursive: true, force: true });
 });
 
