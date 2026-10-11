@@ -5,7 +5,7 @@ For the session that continues project-kickoff. Read this first, then `CLAUDE.md
 
 ## Where this session lives
 
-The session's working folder is the **umbrella** (`AI Development OS/`), so it is listed with the
+The session's working folder is the **umbrella** workspace folder, so it is listed with the
 manager in the app sidebar. It works **only inside `project-kickoff/`**: edits, commits and pushes
 happen in this repo. The umbrella files (`CLAUDE.md`, `README.md`, `docs/`) belong to the manager
 session; ask it to update the project-kickoff rows after a big change.
