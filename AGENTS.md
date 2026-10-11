@@ -36,6 +36,6 @@ Copies of this skill live in `~/.codex/skills/project-kickoff` and `~/.cursor/sk
 
 Start at `docs/TAKEOVER.md`: state, open items, gate and release steps. The session runs from the umbrella folder and works only inside this repo.
 
-## Other hosts (was AGENTS.md)
+## Resuming work
 
-Resuming work: start at [docs/TAKEOVER.md](docs/TAKEOVER.md).
+Start at [docs/TAKEOVER.md](docs/TAKEOVER.md).
