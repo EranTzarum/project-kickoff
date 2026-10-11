@@ -38,6 +38,7 @@ export const FILE_READERS = new Set(["cat", "type", "head", "tail", "grep", "rg"
 export const TEXT_READERS = new Set([...FILE_READERS, "echo", "printf", "uniq", "cut", "tr"]);
 
 // Options that make an otherwise read-only command run another program (rg --pre, git grep -O).
+// Tested with quotes and backslashes removed, so "--pre=x" and --p're' are caught too.
 const EXEC_OPTION = /\s(--pre\b|--pre-glob\b|--hostname-bin\b|--open-files-in-pager\b|-O\S*)/;
 
 // True when every segment starts with an allowed command (also `git grep`), none carries an
@@ -50,5 +51,5 @@ export function readsOnly(command, allowed, noRedirect) {
   if (noRedirect && text.includes(">")) return false;
   const segs = segments(text);
   return segs.length > 0 && segs.every((s) =>
-    (allowed.has(s.split(/\s+/)[0].toLowerCase()) || /^git\s+grep\b/i.test(s)) && !EXEC_OPTION.test(s));
+    (allowed.has(s.split(/\s+/)[0].toLowerCase()) || /^git\s+grep\b/i.test(s)) && !EXEC_OPTION.test(s.replace(/["'\\]/g, "")));
 }

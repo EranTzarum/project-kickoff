@@ -34,6 +34,9 @@ test("sql: destructive SQL after a read-only first word is blocked", () => {
     `git grep --open-files-in-pager="psql -c 'DROP TABLE accounts'" needle`,
     `git grep -O"psql -c 'DROP TABLE accounts'" needle`,
     `rg --pre=./run-sql 'DROP TABLE accounts' .`,
+    `git grep "--open-files-in-pager=psql -c 'DROP TABLE accounts'" needle`,
+    `rg "--pre=./run-sql" 'DROP TABLE accounts' .`,
+    `rg --p're'=./run-sql 'DROP TABLE accounts' .`,
   ], 2);
 });
 
@@ -59,7 +62,7 @@ test("env: any non-read-only command that names a real .env, and redirects to on
     "cat .env > /tmp/env-backup", "sed -n p .env", "printf K=1 >|.env", "sort -o .env values.txt", "sed 'w .env' values.txt",
     "bash -cl 'printf K=1 > .env'", "env bash -c 'printf K=1 > .env'", "Set-Content -Path .env -Value x",
     'cat "$(cp .env.example .env)"', "cat `cp .env.example .env`", "cat .env.example >&.env", "cat .env.example &>.env",
-    "rg --pre=./rewrite-env K .env", "sort --compress-program=./rewrite-env .env",
+    "rg --pre=./rewrite-env K .env", 'rg "--pre=./rewrite-env" K .env', "git grep -O'./rewrite-env' K .env","sort --compress-program=./rewrite-env .env",
   ], 2);
   assert.equal(exitOf("block-env-edit.js", { file_path: "apps/web/.env" }), 2, "Edit/Write path still blocked");
 });
