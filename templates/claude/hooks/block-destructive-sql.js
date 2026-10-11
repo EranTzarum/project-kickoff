@@ -4,19 +4,24 @@
 //
 // False-positive fixes learned on the CRM: the Tailwind class `truncate` and grep/sed
 // patterns that merely *mention* "delete from" used to trip this hook. So:
-//   * read-only commands (grep/rg/sed/cat/echo/git grep/Select-String/findstr) are skipped
+//   * read-only segments (grep/rg/sed/cat/echo/git grep/Select-String/findstr) are skipped,
+//     but only that segment: a destructive command later in the line is still caught
 //   * TRUNCATE must look like a statement: `truncate [table] <ident>` followed by `;`, `cascade`,
 //     `restart`, or end of line — not a bare word inside a class list
+import { segments } from "./_shell.js";
+
 let input = "";
 process.stdin.on("data", (chunk) => (input += chunk));
 process.stdin.on("end", () => {
   const { tool_input } = JSON.parse(input || "{}");
   const command = tool_input?.command ?? "";
 
-  const firstWord = command.trim().split(/\s+/)[0]?.toLowerCase() ?? "";
-  const readOnly = /^(grep|rg|sed|cat|echo|head|tail|less|find|select-string|findstr|awk)$/.test(firstWord) ||
-    /^git\s+grep\b/i.test(command.trim());
-  if (readOnly) process.exit(0);
+  // Judge every segment on its own: `echo ready; psql -c "DROP TABLE t"` must not pass because
+  // the line starts with echo. A segment piped from a read-only one is scanned together with it
+  // (`echo "DROP TABLE t" | psql`).
+  const isReadOnly = (text) =>
+    /^(grep|rg|sed|cat|echo|head|tail|less|select-string|findstr)$/i.test(text.split(/\s+/)[0] ?? "") ||
+    /^git\s+grep\b/i.test(text);
 
   const patterns = [
     /\bdrop\s+table\b/i,
@@ -24,7 +29,13 @@ process.stdin.on("end", () => {
     /\bdelete\s+from\s+[\w."]+\s*(?![^;]*\bwhere\b)/i,
   ];
 
-  const hit = patterns.find((p) => p.test(command));
+  const segs = segments(command);
+  let hit;
+  segs.forEach(({ text, piped }, i) => {
+    if (hit || isReadOnly(text)) return;
+    const scan = piped && i > 0 ? `${segs[i - 1].text}\n${text}` : text;
+    hit = patterns.find((p) => p.test(scan));
+  });
   if (hit) {
     process.stderr.write(
       `Blocked: command looks like destructive SQL (${hit}) run from a shell.\n` +

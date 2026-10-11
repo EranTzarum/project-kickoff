@@ -1,19 +1,25 @@
 #!/usr/bin/env node
-// PreToolUse/Edit|Write: refuses to create a migration whose numeric/timestamp prefix already
+// PreToolUse/Edit|Write|Bash: refuses to create a migration whose numeric/timestamp prefix already
 // exists locally or on origin/main. On the CRM, prefixes collided three times across parallel
 // branches (0035 x3, 0045 x2), and live migration names then diverged from repo file names.
 // Exit 2 = block. Only fires for new files under supabase/migrations/.
 import { existsSync, readdirSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { basename, dirname } from "node:path";
+import { writeTargets } from "./_shell.js";
 
 let input = "";
 process.stdin.on("data", (chunk) => (input += chunk));
 process.stdin.on("end", () => {
   const { tool_input } = JSON.parse(input || "{}");
-  const path = (tool_input?.file_path ?? "").replaceAll("\\", "/");
+  const paths = [tool_input?.file_path ?? "", ...writeTargets(tool_input?.command ?? "")].map((p) => p.replaceAll("\\", "/"));
+  for (const path of paths) check(path);
+  process.exit(0);
+});
+
+function check(path) {
   const m = path.match(/supabase\/migrations\/([0-9]{4,14})[_-][^/]+\.sql$/);
-  if (!m || existsSync(path)) process.exit(0); // not a migration, or editing an existing one
+  if (!m || existsSync(path)) return; // not a migration, or editing an existing one
 
   const prefix = m[1];
   const file = basename(path);
@@ -33,5 +39,4 @@ process.stdin.on("end", () => {
     );
     process.exit(2);
   }
-  process.exit(0);
-});
+}

@@ -47,7 +47,7 @@ session; ask it to update the project-kickoff rows after a big change.
 ## Gate
 
 ```bash
-node --test scripts/preflight.test.mjs
+node --test scripts/preflight.test.mjs scripts/hooks.test.mjs
 node ~/.claude/skills/readmelyzer/scripts/check-readme.mjs . --public --all-files
 ```
 
