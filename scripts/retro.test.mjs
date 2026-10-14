@@ -10,10 +10,16 @@ import { draftCandidates, parseCandidates, saveLessons, readStore, draftTrackedR
 
 const here = dirname(fileURLToPath(import.meta.url));
 const run = (args, env = {}) => spawnSync(process.execPath, [join(here, "retro.mjs"), ...args], { encoding: "utf8", env: { ...process.env, ...env } });
+// A kickoff project is a git repo; a plain temp folder could sit under a stray .git, which retro refuses.
+const project = () => {
+  const d = mkdtempSync(join(tmpdir(), "retro-"));
+  spawnSync("git", ["init", "-q"], { cwd: d });
+  return d;
+};
 const ledgerLine = (row) => JSON.stringify({ v: 1, ts: row.ts, project_id: row.project_id ?? "abcd1234abcd1234", event: row.event, ...row }) + "\n";
 
 test("STATE.md mistakes: two rows, dated bullet keeps date, skips (none)", () => {
-  const dir = mkdtempSync(join(tmpdir(), "retro-"));
+  const dir = project();
   writeFileSync(join(dir, "STATE.md"), `## Mistakes already made here\n- 2024-06-01 forgot RLS on new table\n- shipped without mobile check\n- (none yet)\n\n## Next\n`);
   const now = new Date("2026-01-15T12:00:00.000Z");
   const rows = draftCandidates(dir, { now });
@@ -26,7 +32,7 @@ test("STATE.md mistakes: two rows, dated bullet keeps date, skips (none)", () =>
 });
 
 test("ledger-derived candidates", () => {
-  const dir = mkdtempSync(join(tmpdir(), "retro-"));
+  const dir = project();
   mkdirSync(join(dir, ".kickoff"), { recursive: true });
   const base = "2026-01-01T00:00:00.000Z";
   const pid = "abcd1234abcd1234";
@@ -58,7 +64,7 @@ test("ledger-derived candidates", () => {
 });
 
 test("CLI draft, force, and pipe in mistake cell", () => {
-  const dir = mkdtempSync(join(tmpdir(), "retro-"));
+  const dir = project();
   const store = mkdtempSync(join(tmpdir(), "retro-store-"));
   const env = { PROJECT_KICKOFF_HOME: store };
   writeFileSync(join(dir, "STATE.md"), "## Mistakes\n- used a|b in config\n");
@@ -74,7 +80,7 @@ test("CLI draft, force, and pipe in mistake cell", () => {
 });
 
 test("--save and duplicate skip with project_id", () => {
-  const dir = mkdtempSync(join(tmpdir(), "retro-"));
+  const dir = project();
   const store = mkdtempSync(join(tmpdir(), "retro-store-"));
   const env = { PROJECT_KICKOFF_HOME: store };
   mkdirSync(join(dir, ".kickoff"), { recursive: true });
@@ -110,7 +116,7 @@ test("--list empty and with saved row", () => {
 });
 
 test("the draft is git-ignored; a project without an id gets one on save; --list shows the project", () => {
-  const dir = mkdtempSync(join(tmpdir(), "retro-"));
+  const dir = project();
   const store = mkdtempSync(join(tmpdir(), "retro-store-"));
   const env = { PROJECT_KICKOFF_HOME: store };
   writeFileSync(join(dir, "STATE.md"), "## Mistakes\n- one\n");
@@ -152,18 +158,20 @@ test("a draft that git already tracks is never rewritten", () => {
   rmSync(store, { recursive: true, force: true });
 });
 
-test("when git cannot be asked inside a repo, the draft is refused; outside any repo it is allowed", () => {
+test("when git cannot be asked, only a readable empty .git is allowed; an untracked draft in a repo is fine", () => {
   const repo = mkdtempSync(join(tmpdir(), "retro-nogit-"));
   mkdirSync(join(repo, ".git"));
-  // An empty, stray .git folder tracks nothing.
-  assert.equal(draftTrackedReason(repo, "git-binary-that-does-not-exist"), null);
   writeFileSync(join(repo, ".git", "index"), "");
+  assert.match(draftTrackedReason(repo, "git-binary-that-does-not-exist"), /cannot check/);
+  // Anything but a readable, empty folder is refused: a .git file (worktree pointer), or any content.
+  rmSync(join(repo, ".git"), { recursive: true, force: true });
+  writeFileSync(join(repo, ".git"), "gitdir: elsewhere\n");
   assert.match(draftTrackedReason(repo, "git-binary-that-does-not-exist"), /cannot check/);
 
   rmSync(repo, { recursive: true, force: true });
-  const plain = mkdtempSync(join(tmpdir(), "retro-plain-"));
-  assert.equal(draftTrackedReason(plain), null);
-  rmSync(plain, { recursive: true, force: true });
+  const fresh = project();
+  assert.equal(draftTrackedReason(fresh), null, "an untracked draft in a readable repo is fine");
+  rmSync(fresh, { recursive: true, force: true });
 });
 
 test("a damaged repo (HEAD missing, index intact) still protects a tracked draft", () => {
