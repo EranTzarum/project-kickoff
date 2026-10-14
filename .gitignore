@@ -2,3 +2,10 @@ node_modules/
 .DS_Store
 Thumbs.db
 *.log
+.crew/
+.claude-flow/
+.claude/proven-config.json
+.claude/.proven-config-version
+.claude/settings.local.json
+.swarm/
+.hive-mind/
