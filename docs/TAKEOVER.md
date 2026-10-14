@@ -37,8 +37,9 @@ pr-gate, merge only on the owner's `merge`.
    gap report ranked by risk; `status` on a repo with code says "run adopt".
 3. **P3 Field fixes** — done in this branch: environment tiers as data (Local/CI/Test/Beta/Prod) with a shared-DB check; Windows-safe
    `.gitattributes` and a CRLF-in-`.sh` check.
-4. **P4 Launch track** — `docs/LAUNCH.md` of owner-only blockers from day 1; owner steps validated by a script
-   in the `## What you need to do` format.
+4. **P4 Launch track** — done in this branch: `docs/LAUNCH.md` of owner-only blockers from day 1; owner steps validated by a script
+   in the `## What you need to do` format (L105, L106).
+   Not in P4: the stage 2 AI-cost question — no field evidence yet; add it with a lesson when a project supplies one.
 5. **P5 Build alone or with Crew** — stage 6 builds here, or exports `crew.json` when the Factory is installed.
 6. **P6 Learn across projects** — lesson `source` + `class` columns, `retro` mode, a user-level lesson store,
    community lessons by PR; a rule needs 2+ projects.
@@ -58,7 +59,7 @@ positives (`cp .env backup`, `sed` over SQL text): the owner overrides by hand; 
 ## Gate
 
 ```bash
-node --test scripts/preflight.test.mjs scripts/hooks.test.mjs scripts/render.test.mjs scripts/measure.test.mjs scripts/render-mapping.test.mjs scripts/adopt.test.mjs scripts/env-tiers.test.mjs scripts/line-endings.test.mjs
+node --test scripts/preflight.test.mjs scripts/hooks.test.mjs scripts/render.test.mjs scripts/measure.test.mjs scripts/render-mapping.test.mjs scripts/adopt.test.mjs scripts/env-tiers.test.mjs scripts/line-endings.test.mjs scripts/owner-steps.test.mjs scripts/launch.test.mjs
 node ~/.claude/skills/readmelyzer/scripts/check-readme.mjs . --public --all-files
 ```
 

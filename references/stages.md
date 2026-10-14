@@ -19,7 +19,7 @@ Second call only if needed:
 5. Who codes: orchestrator plans + workers implement *(default)*, or single agent end to end? Which worker sandboxes can run npm/tests? — L6, L72
 6. What "v1 done" means, in one sentence the owner would sign.
 
-Deliverables: `docs/KICKOFF.md` (tracker), `STATE.md`, and optionally a notes-vault `Projects/<name>/Overview.md` via `vault-capture` (Claude Code, when installed).
+Deliverables: `docs/KICKOFF.md` (tracker), `STATE.md`, `docs/LAUNCH.md` (launch track), and optionally a notes-vault `Projects/<name>/Overview.md` via `vault-capture` (Claude Code, when installed).
 
 Exit checklist:
 - [ ] Tracker and STATE.md exist; STATE.md has a "mistakes already made" section — L69, L70
@@ -28,6 +28,8 @@ Exit checklist:
 - [ ] Division of labor written in AGENTS.md §Workspace — L6, L91
 - [ ] Event ledger started: `.kickoff/project.json` + `.kickoff/HISTORY.jsonl` (render writes them; log `stage_start` for each stage and every owner action) — L101
 - [ ] Existing repo: adopted first (`adopt` dry run reviewed, then `--write`); no parallel docs created — L102
+- [ ] Launch track rendered (docs/LAUNCH.md); the owner has started every item that blocks the pilot — L105
+- [ ] Every owner action uses the owner-steps format (exact place, one action, value block, what you should see, can't-undo flag) and stands alone — L106
 
 ---
 
