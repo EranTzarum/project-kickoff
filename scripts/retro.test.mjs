@@ -167,6 +167,10 @@ test("when git cannot be asked, only a readable empty .git is allowed; an untrac
   rmSync(join(repo, ".git"), { recursive: true, force: true });
   writeFileSync(join(repo, ".git"), "gitdir: elsewhere\n");
   assert.match(draftTrackedReason(repo, "git-binary-that-does-not-exist"), /cannot check/);
+  // An access error while looking up .git is a refusal, never "absent".
+  rmSync(join(repo, ".git"), { force: true });
+  const denied = () => { throw Object.assign(new Error("denied"), { code: "EACCES" }); };
+  assert.match(draftTrackedReason(repo, "git-binary-that-does-not-exist", { lstat: denied }), /cannot check/);
 
   rmSync(repo, { recursive: true, force: true });
   const fresh = project();

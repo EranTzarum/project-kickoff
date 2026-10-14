@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Draft lesson candidates from STATE.md + .kickoff/HISTORY.jsonl; save to the user's lesson store.
-import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync, readdirSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync, readdirSync, lstatSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { join, resolve, dirname } from "node:path";
 import { homedir } from "node:os";
@@ -145,7 +145,7 @@ export function saveLessons(root, store) {
 }
 
 // Read-only. Returns why the draft must not be written, or null when it is safe.
-export function draftTrackedReason(root, git = "git") {
+export function draftTrackedReason(root, git = "git", { lstat = lstatSync, readdir = readdirSync } = {}) {
   // Inherited GIT_* variables (GIT_DIR, GIT_WORK_TREE, GIT_CEILING_DIRECTORIES) could point git away from
   // the project; drop them so git finds the project's own repo.
   const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^GIT_/i.test(k)));
@@ -155,10 +155,12 @@ export function draftTrackedReason(root, git = "git") {
   // Any other answer (no git binary, no access, a damaged repo that git calls "not a git repository") is
   // safe only when no .git at or above the project could still track the draft. Fail closed: the one
   // exception is a .git folder we can read and that is empty (a stray folder tracks nothing).
-  const provenEmpty = (g) => { try { return readdirSync(g).length === 0; } catch { return false; } };
+  // Only "does not exist" counts as absent; an access error on .git is treated as a repo we cannot read.
+  const absent = (g) => { try { lstat(g); return false; } catch (e) { return e.code === "ENOENT" || e.code === "ENOTDIR"; } };
+  const provenEmpty = (g) => { try { return readdir(g).length === 0; } catch { return false; } };
   for (let d = resolve(root); ; d = dirname(d)) {
     const g = join(d, ".git");
-    if (existsSync(g) && !provenEmpty(g))
+    if (!absent(g) && !provenEmpty(g))
       return "cannot check whether git tracks .kickoff/lessons-candidates.md (" + (r.error ? r.error.code : (r.stderr || "").trim().split("\n")[0]) + "); fix git access, then retro again";
     if (dirname(d) === d) return null; // no repo above: nothing to publish
   }
