@@ -14,9 +14,19 @@ export const CLASSES = ["PROJECT-SPECIFIC", "CANDIDATE REUSABLE", "CONFIRMED REU
 // Cells of a `| a | b |` row, split on pipes not escaped as `\|`.
 const cells = (line) => line.trim().replace(/^\|/, "").replace(/(?<!\\)\|$/, "").split(/(?<!\\)\|/).map((c) => c.trim());
 
-// Any row whose first cell starts with L, so a malformed id (L1O9) is linted, not skipped.
-const lessonRows = (text) =>
-  text.split(/\r?\n/).filter((l) => /^\|\s*L[^|\s]*\s*\|/.test(l)).map(cells);
+// Every body row of every table whose header starts with `| id |`, whatever its first cell holds, so a
+// malformed id (L1O9, "L 109") is linted, never skipped.
+function lessonRows(text) {
+  const rows = [];
+  let inTable = false;
+  for (const line of text.split(/\r?\n/)) {
+    if (!line.trim().startsWith("|")) { inTable = false; continue; }
+    if (/^\|\s*id\s*\|/.test(line)) { inTable = true; continue; }
+    if (!inTable || /^\|[\s|:-]*$/.test(line)) continue;
+    rows.push(cells(line));
+  }
+  return rows;
+}
 
 export function parseLessons(text) {
   return lessonRows(text).map((c) => Object.fromEntries(FIELDS.map((f, i) => [f, c[i] ?? ""])));

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Draft lesson candidates from STATE.md + .kickoff/HISTORY.jsonl; save to the user's lesson store.
 import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { join, resolve } from "node:path";
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -162,13 +163,19 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   }
   const outF = join(root, ".kickoff/lessons-candidates.md");
   if (existsSync(outF) && !args.includes("--force")) { console.error(`${outF} exists; use --force`); process.exit(1); }
+  // The draft may hold project details; it must never reach git. An ignore rule does not untrack a file,
+  // so refuse when git already tracks or stages it (read-only check; no git = nothing to protect).
+  const tracked = spawnSync("git", ["ls-files", "--error-unmatch", "--", ".kickoff/lessons-candidates.md"], { cwd: root, encoding: "utf8" });
+  if (tracked.status === 0) {
+    console.error("git tracks .kickoff/lessons-candidates.md, so it would be published; run: git rm --cached .kickoff/lessons-candidates.md, then retro again");
+    process.exit(1);
+  }
   const rows = draftCandidates(root);
   mkdirSync(join(root, ".kickoff"), { recursive: true });
-  writeFileSync(outF, formatCandidates(rows));
-  // The draft may hold project details; keep it out of git (the saved store lives outside the project).
   const ignoreF = join(root, ".kickoff/.gitignore");
   const ignore = existsSync(ignoreF) ? readFileSync(ignoreF, "utf8") : "";
   if (!/^lessons-candidates\.md$/m.test(ignore)) appendFileSync(ignoreF, (ignore && !ignore.endsWith("\n") ? "\n" : "") + "lessons-candidates.md\n");
+  writeFileSync(outF, formatCandidates(rows));
   if (!rows.length) console.log("no candidates found");
   console.log(`${rows.length} candidates -> .kickoff/lessons-candidates.md`);
 }

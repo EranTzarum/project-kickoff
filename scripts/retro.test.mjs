@@ -130,3 +130,20 @@ test("the draft is git-ignored; a project without an id gets one on save; --list
   rmSync(dir, { recursive: true, force: true });
   rmSync(store, { recursive: true, force: true });
 });
+
+test("a draft that git already tracks is never rewritten", () => {
+  const dir = mkdtempSync(join(tmpdir(), "retro-git-"));
+  const store = mkdtempSync(join(tmpdir(), "retro-store-"));
+  const git = (...a) => spawnSync("git", a, { cwd: dir, encoding: "utf8" });
+  git("init", "-q");
+  mkdirSync(join(dir, ".kickoff"));
+  writeFileSync(join(dir, ".kickoff/lessons-candidates.md"), "old draft\n");
+  git("add", ".kickoff/lessons-candidates.md");
+  writeFileSync(join(dir, "STATE.md"), "## Mistakes\n- secret detail\n");
+  const r = run([dir, "--force"], { PROJECT_KICKOFF_HOME: store });
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /git rm --cached \.kickoff\/lessons-candidates\.md/);
+  assert.equal(readFileSync(join(dir, ".kickoff/lessons-candidates.md"), "utf8"), "old draft\n");
+  rmSync(dir, { recursive: true, force: true });
+  rmSync(store, { recursive: true, force: true });
+});

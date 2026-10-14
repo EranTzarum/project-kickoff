@@ -84,7 +84,8 @@ test("CLI: a bad file exits 1 with the error on stderr; the repo exits 0", () =>
 });
 
 test("a malformed id in a row or a citation is an error, not skipped", () => {
-  const errors = lintLessons(doc([row("L1"), row("L1O9")]), { cited: ["L1", "L1O9"] });
+  const errors = lintLessons(doc([row("L1"), row("L1O9"), row("L 109")]), { cited: ["L1", "L1O9"] });
+  assert.ok(errors.includes("L 109: malformed lesson id (expected L<number>)"), errors.join("; "));
   assert.ok(errors.includes("L1O9: malformed lesson id (expected L<number>)"), errors.join("; "));
   assert.ok(errors.includes("L1O9: malformed lesson citation (expected L<number>)"), errors.join("; "));
   const dir = mkdtempSync(join(tmpdir(), "lessons-cite-"));
