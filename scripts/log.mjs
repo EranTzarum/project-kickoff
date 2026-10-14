@@ -21,6 +21,7 @@ export const SCHEMA = {
   regenerate: { stage: isStage, files: isCount },
   stage_ready: { stage: isStage },
   gate_run: { passed: isCount, failed: isCount },
+  adopt: { mapped: isCount, gaps: isCount },
   owner_action_open: { id: isId },
   owner_action_done: { id: isId },
   blocker: {},
