@@ -17,7 +17,17 @@ const read = (p) => readFileSync(join(root, p), "utf8").replace(/\r\n/g, "\n");
 
 const kickoff = join(root, "docs/KICKOFF.md");
 if (!existsSync(kickoff)) {
-  console.log("STAGE 0 INTAKE: MISSING — docs/KICKOFF.md (run /project-kickoff to generate it)");
+  const markers = [
+    "package.json", "pyproject.toml", "requirements.txt", "go.mod", "Cargo.toml",
+    "composer.json", "Gemfile", "pom.xml", "build.gradle", "manifest.json",
+  ];
+  const found = markers.find((m) => existsSync(join(root, m)))
+    ?? (existsSync(join(root, "src")) ? "src/" : existsSync(join(root, "app")) ? "app/" : null);
+  if (found) {
+    console.log(`STAGE 0 INTAKE: MISSING — docs/KICKOFF.md (existing project detected: ${found}; run /project-kickoff adopt)`);
+  } else {
+    console.log("STAGE 0 INTAKE: MISSING — docs/KICKOFF.md (run /project-kickoff to generate it)");
+  }
   process.exit(strict ? 1 : 0);
 }
 

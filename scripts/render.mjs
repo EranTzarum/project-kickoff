@@ -95,12 +95,33 @@ for (const [k, v] of Object.entries(a)) {
 
 const render = (text) => text.replace(/\{\{([A-Z0-9_]+)\}\}/g, (m, k) => (k in values ? values[k] : m));
 
+let adoptMapped = {};
+const adoptPath = join(root, ".kickoff/adopt.json");
+if (existsSync(adoptPath)) {
+  try {
+    const adopt = JSON.parse(readFileSync(adoptPath, "utf8"));
+    if (adopt.mapped !== null && typeof adopt.mapped === "object" && !Array.isArray(adopt.mapped)) {
+      adoptMapped = adopt.mapped;
+    } else {
+      console.log("NOTE adopt.json: ignored (mapped is not an object)");
+    }
+  } catch (e) {
+    console.log(`NOTE adopt.json: ignored (${e.message})`);
+  }
+}
+
 let written = 0, skipped = 0;
 const writtenByStage = {};
 for (const [stage, files] of Object.entries(STAGE_FILES)) {
   if (onlyStage !== null && Number(stage) !== onlyStage) continue;
   writtenByStage[stage] = 0;
   for (const [src, dst] of files) {
+    const mappedTo = adoptMapped[dst];
+    if (typeof mappedTo === "string" && mappedTo) {
+      console.log(`skip   ${dst} (mapped to ${mappedTo})`);
+      skipped++;
+      continue;
+    }
     const target = join(root, dst);
     if (existsSync(target) && !force) { console.log(`skip   ${dst} (exists)`); skipped++; continue; }
     mkdirSync(dirname(target), { recursive: true });
