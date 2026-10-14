@@ -15,7 +15,7 @@ Base directory of this skill: the folder holding this file. Templates are in `te
 - `/project-kickoff status` — run the checker only, print the stage table, change nothing.
 - `/project-kickoff adopt` — for a repo that already exists. Run `node <skill>/scripts/adopt.mjs <project-root>`, show the report, ask once (one batched question) whether to write the manifest, then run it again with `--write`. Continue with the normal stage loop: stages whose deliverables are mapped or present are skipped by the checker; the rest are rendered, and `render.mjs` never writes over a mapped document. Present the gap report high-risk first, as owner actions where the owner must act. Details: `references/adopt.md` (L102).
 - `/project-kickoff stage <n>` — re-run one stage's questionnaire and regenerate its deliverables.
-- `/project-kickoff feature <name>` — print the build-loop checklist (stage 6) filled in for one feature.
+- `/project-kickoff feature <name>` — print the build-loop checklist (stage 6) filled in for one feature. Asks the build route once when Crew is installed.
 - `/project-kickoff measure` — run `node <skill>/scripts/measure.mjs <project-root>` and print the metrics (stage days, owner-action age, gate pass rate, idea to pilot). Change nothing.
 
 ## Rules (all modes)
@@ -29,7 +29,7 @@ Base directory of this skill: the folder holding this file. Templates are in `te
 7. **No git, no deploy, no secrets.** The skill writes files. Committing, pushing, deploying and filling real `.env` values are the user's actions; list them under "Owner actions" at the end of each stage.
 8. **Notes vault (optional).** At the end of stage 0 call the `vault-capture` skill to create `Projects/<name>/Overview.md` (if the vault skills exist on this machine). At the end of the run call `vault-sync`. Skip silently where those skills are absent (Codex/Cursor without the vault).
 9. **Operating model:** one approval gate per stage, no per-step permission prompts, no progress narration, finish each stage with a one-screen receipt: deliverables written, checker line, owner actions. Owner actions are written in the owner-steps format (`references/owner-steps.md`) under `## What you need to do`; check them with `node <skill>/scripts/owner-steps.mjs --lint <file>` (L106). The stage 0 receipt lists the launch-track items from `docs/LAUNCH.md` as the owner's day-1 work (L105).
-10. **Measure (L101).** `render.mjs`, `preflight.mjs` and the project's `gates.mjs` log their own events to `.kickoff/HISTORY.jsonl`. You log the rest with `node <skill>/scripts/log.mjs <project-root> <event> [--stage N] [--id X] [--note "..."]`: `stage_start` when a stage's questionnaire begins, `owner_action_open` / `owner_action_done` (same `--id`) for every owner action, `blocker` when work stops on the owner, `pilot` when the first real user signs in. Never log names, paths, URLs or secrets in `--note`. Schema and metrics: `docs/METRICS.md`.
+10. **Measure (L101).** `render.mjs`, `preflight.mjs` and the project's `gates.mjs` log their own events to `.kickoff/HISTORY.jsonl`. You log the rest with `node <skill>/scripts/log.mjs <project-root> <event> [--stage N] [--id X] [--note "..."]`: `stage_start` when a stage's questionnaire begins, `owner_action_open` / `owner_action_done` (same `--id`) for every owner action, `blocker` when work stops on the owner, `pilot` when the first real user signs in, `build_route` once per feature via `build-route.mjs <project-root> --choose kickoff|crew`. Never log names, paths, URLs or secrets in `--note`. Schema and metrics: `docs/METRICS.md`.
 
 ## Stage loop
 
@@ -79,4 +79,4 @@ Exit code is 0 unless `--strict` was passed and something is MISSING or a CHECK 
 
 Printed after stage 5 and on `/project-kickoff feature <name>`; full text in `references/stages.md` §6. Short form:
 
-design/grill → ticket (write scope + acceptance **command** + files to read + off-limits) → own worktree → build → gates in the worktree → cross-model verify (different family, given the original task not the worker's summary) → migration runbook if schema changed → `STATE.md` update → `vault-sync` → owner reviews branch, owner merges. Checkpoint state to disk at ~70 % of quota, not at 95 %.
+design/grill → ticket (write scope + acceptance **command** + files to read + off-limits) → build route (kickoff loop, or export to Crew with `to-crew.mjs`) → own worktree → build → gates in the worktree → cross-model verify (different family, given the original task not the worker's summary) → migration runbook if schema changed → `STATE.md` update → `vault-sync` → owner reviews branch, owner merges. Checkpoint state to disk at ~70 % of quota, not at 95 %.

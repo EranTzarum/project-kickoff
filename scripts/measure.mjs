@@ -33,6 +33,11 @@ export function measure(allRows) {
   const openDays = actions.filter((a) => a.open).map((a) => a.days);
   const gates = of("gate_run");
   const pilot = of("pilot")[0];
+  const routes = of("build_route");
+  const build_routes = {
+    kickoff: routes.filter((r) => r.route === "kickoff").length,
+    crew: routes.filter((r) => r.route === "crew").length,
+  };
   return {
     events: rows.length,
     rows_ignored: allRows.length - rows.length,
@@ -43,6 +48,7 @@ export function measure(allRows) {
     gate_pass_rate: gates.length ? Math.round((gates.filter((g) => g.failed === 0).length / gates.length) * 100) / 100 : null,
     regenerations: of("regenerate").length,
     blockers: of("blocker").length,
+    build_routes,
   };
 }
 
@@ -66,4 +72,5 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   console.log(`Owner actions: ${m.owner_actions.total} total, ${m.owner_actions.open} open, oldest open ${na(m.owner_actions.oldest_open_days, " days")}`);
   console.log(`Gate runs: ${m.gate_runs}, pass rate ${na(m.gate_pass_rate)}`);
   console.log(`Regenerations: ${m.regenerations}; blockers: ${m.blockers}`);
+  console.log(`Build routes: kickoff=${m.build_routes.kickoff}, crew=${m.build_routes.crew}`);
 }
