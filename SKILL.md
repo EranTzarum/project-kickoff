@@ -15,6 +15,7 @@ Base directory of this skill: the folder holding this file. Templates are in `te
 - `/project-kickoff status` — run the checker only, print the stage table, change nothing.
 - `/project-kickoff stage <n>` — re-run one stage's questionnaire and regenerate its deliverables.
 - `/project-kickoff feature <name>` — print the build-loop checklist (stage 6) filled in for one feature.
+- `/project-kickoff measure` — run `node <skill>/scripts/measure.mjs <project-root>` and print the metrics (stage days, owner-action age, gate pass rate, idea to pilot). Change nothing.
 
 ## Rules (all modes)
 
@@ -23,10 +24,11 @@ Base directory of this skill: the folder holding this file. Templates are in `te
 3. **Defaults are pre-filled from the profile** and marked "(profile default)". Silence on a question means the default.
 4. **Advisory gates.** After writing a stage's deliverables run `node <skill>/scripts/preflight.mjs <project-root>`, show its stage line, then continue. Never block on a MISSING line; list it and move on. Only `--strict` (CI) fails.
 5. **Generate, do not hand-write.** Collect the stage answers into `<project>/.kickoff/answers.json` (shape: `templates/answers.example.json`; keys are camelCase placeholder names, lists for the composite fields), then run `node <skill>/scripts/render.mjs <project-root> .kickoff/answers.json --stage <n>`. The renderer copies each template to its target, fills every `{{PLACEHOLDER}}` (`templates/PLACEHOLDERS.md`), derives the composite ones, and prints any left unfilled. Fix unfilled ones by adding the answer, never by editing the rendered file.
-6. **Never overwrite a deliverable that already exists.** `render.mjs` skips existing files; pass `--force` only when the user chose "regenerate". Commit `.kickoff/answers.json` (it holds no secrets) so `stage <n>` can re-render later.
+6. **Never overwrite a deliverable that already exists.** `render.mjs` skips existing files; pass `--force` only when the user chose "regenerate". Commit `.kickoff/answers.json`, `.kickoff/project.json` and `.kickoff/HISTORY.jsonl` (no secrets in any of them) so `stage <n>` can re-render later and the project keeps its measurements.
 7. **No git, no deploy, no secrets.** The skill writes files. Committing, pushing, deploying and filling real `.env` values are the user's actions; list them under "Owner actions" at the end of each stage.
 8. **Notes vault (optional).** At the end of stage 0 call the `vault-capture` skill to create `Projects/<name>/Overview.md` (if the vault skills exist on this machine). At the end of the run call `vault-sync`. Skip silently where those skills are absent (Codex/Cursor without the vault).
 9. **Operating model:** one approval gate per stage, no per-step permission prompts, no progress narration, finish each stage with a one-screen receipt: deliverables written, checker line, owner actions.
+10. **Measure (L101).** `render.mjs`, `preflight.mjs` and the project's `gates.mjs` log their own events to `.kickoff/HISTORY.jsonl`. You log the rest with `node <skill>/scripts/log.mjs <project-root> <event> [--stage N] [--id X] [--note "..."]`: `stage_start` when a stage's questionnaire begins, `owner_action_open` / `owner_action_done` (same `--id`) for every owner action, `blocker` when work stops on the owner, `pilot` when the first real user signs in. Never log names, paths, URLs or secrets in `--note`. Schema and metrics: `docs/METRICS.md`.
 
 ## Stage loop
 

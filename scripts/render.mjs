@@ -4,9 +4,11 @@
 // Copies each template to its target path, replaces every {{PLACEHOLDER}}, derives the
 // composite placeholders (env rows, JS arrays, SQL lists), and refuses to overwrite an
 // existing file unless --force. Prints one line per file. No dependencies.
+// Logs one `render` (or `regenerate` with --force) event per stage to .kickoff/HISTORY.jsonl.
 import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { logEvent } from "./log.mjs";
 
 const SKILL = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const T = join(SKILL, "templates");
@@ -94,8 +96,10 @@ for (const [k, v] of Object.entries(a)) {
 const render = (text) => text.replace(/\{\{([A-Z0-9_]+)\}\}/g, (m, k) => (k in values ? values[k] : m));
 
 let written = 0, skipped = 0;
+const writtenByStage = {};
 for (const [stage, files] of Object.entries(STAGE_FILES)) {
   if (onlyStage !== null && Number(stage) !== onlyStage) continue;
+  writtenByStage[stage] = 0;
   for (const [src, dst] of files) {
     const target = join(root, dst);
     if (existsSync(target) && !force) { console.log(`skip   ${dst} (exists)`); skipped++; continue; }
@@ -105,7 +109,11 @@ for (const [stage, files] of Object.entries(STAGE_FILES)) {
     const left = out.match(/\{\{[A-Z0-9_]+\}\}/g);
     console.log(`write  ${dst}${left ? `  (unfilled: ${[...new Set(left)].join(" ")})` : ""}`);
     written++;
+    writtenByStage[stage]++;
   }
+}
+for (const [stage, files] of Object.entries(writtenByStage)) {
+  if (files) logEvent(root, force ? "regenerate" : "render", { stage: Number(stage), files });
 }
 // The checker travels with the project so CI can run it without the skill installed.
 if (onlyStage === null || onlyStage === 5) {

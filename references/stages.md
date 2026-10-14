@@ -26,6 +26,7 @@ Exit checklist:
 - [ ] Tooling bring-up listed as owner actions: CLI auth (gh, hosting, DB), shell stated, toolchain (jq/rg) — L4, L5
 - [ ] Paid tools' quota/billing model recorded once — L7
 - [ ] Division of labor written in AGENTS.md §Workspace — L6, L91
+- [ ] Event ledger started: `.kickoff/project.json` + `.kickoff/HISTORY.jsonl` (render writes them; log `stage_start` for each stage and every owner action) — L101
 
 ---
 

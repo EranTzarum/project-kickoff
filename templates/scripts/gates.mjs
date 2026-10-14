@@ -2,7 +2,7 @@
 // Runs every command in the ```gates block of docs/KICKOFF.md, in order, in the current
 // directory. Prints PASS/FAIL per command with raw output, runs ALL of them even after a
 // failure, exits non-zero if any failed. No dependencies. Works in a clean worktree with no .env.
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync, appendFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 
 const md = readFileSync("docs/KICKOFF.md", "utf8");
@@ -27,4 +27,9 @@ for (const cmd of commands) {
   if (!ok) console.log((r.stdout + r.stderr).trim());
 }
 console.log(`\n${commands.length - failed}/${commands.length} gates passed`);
+// Kickoff ledger (measure.mjs reads it): one gate_run row per run, never in CI.
+if (!process.env.CI && existsSync(".kickoff/project.json")) {
+  const { project_id } = JSON.parse(readFileSync(".kickoff/project.json", "utf8"));
+  appendFileSync(".kickoff/HISTORY.jsonl", JSON.stringify({ v: 1, ts: new Date().toISOString(), project_id, event: "gate_run", passed: commands.length - failed, failed }) + "\n");
+}
 process.exit(failed ? 1 : 0);

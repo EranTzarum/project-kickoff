@@ -7,7 +7,7 @@
 //               no two migration files share a prefix
 // Prints one line per stage and per failed cross-check. Exit 0 always, except --strict with any
 // MISSING/CHECK line → exit 1 (for CI). CRLF-tolerant. No dependencies.
-import { readFileSync, existsSync, statSync, readdirSync } from "node:fs";
+import { readFileSync, existsSync, statSync, readdirSync, appendFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 const args = process.argv.slice(2);
@@ -34,6 +34,7 @@ for (const line of read("docs/KICKOFF.md").split("\n")) {
 
 // ---- per-deliverable checks ----
 let problems = 0;
+const ready = [];
 for (const s of stages) {
   const missing = [];
   for (const p of s.paths) {
@@ -46,7 +47,7 @@ for (const s of stages) {
   const label = `STAGE ${s.n} ${s.name.toUpperCase().replace(/\s*\(.*\)\s*$/, "")}`;
   if (s.paths.length === 0) { console.log(`${label}: (no tracked deliverables)`); continue; }
   if (missing.length) { problems++; console.log(`${label}: MISSING — ${missing.join("; ")}`); }
-  else console.log(`${label}: READY`);
+  else { console.log(`${label}: READY`); ready.push(s.n); }
 }
 
 // ---- strict: the manifest must be complete ----
@@ -86,6 +87,20 @@ if (existsSync(migDir)) {
       const fn = m[1];
       if (!new RegExp(`revoke\\s+(?:execute|all)\\s+on\\s+function\\s+(?:public\\.)?"?${fn}"?[^;]*\\bfrom\\b[^;]*\\b(anon|public)\\b`).test(sql)) { problems++; console.log(`CHECK migrations: ${f} creates function ${fn}() without a revoke from anon/public`); }
     }
+  }
+}
+
+// ---- ledger: the first time a stage turns READY, append a stage_ready row (schema: the skill's
+// docs/METRICS.md). Self-contained on purpose: this file is copied into projects without the skill.
+// Only once the project has .kickoff/project.json, and never in CI.
+const ledger = join(root, ".kickoff/HISTORY.jsonl");
+const idFile = join(root, ".kickoff/project.json");
+if (!process.env.CI && existsSync(idFile)) {
+  const rows = existsSync(ledger) ? read(".kickoff/HISTORY.jsonl").split("\n").filter(Boolean).map((l) => { try { return JSON.parse(l); } catch { return {}; } }) : [];
+  const done = new Set(rows.filter((r) => r.event === "stage_ready").map((r) => r.stage));
+  const project_id = JSON.parse(read(".kickoff/project.json")).project_id;
+  for (const n of ready.filter((n) => !done.has(n))) {
+    appendFileSync(ledger, JSON.stringify({ v: 1, ts: new Date().toISOString(), project_id, event: "stage_ready", stage: n }) + "\n");
   }
 }
 
