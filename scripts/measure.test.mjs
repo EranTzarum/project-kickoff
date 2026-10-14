@@ -124,11 +124,13 @@ test("measure: stage days, pilot, owner actions, gate pass rate; missing data is
     { ts: at(0), event: "owner_action_open" }, { ts: at(1), event: "owner_action_done" },
     { ts: at(1), event: "gate_run" }, { ts: at(1), event: "gate_run", failed: 0 }, { ts: at(1), event: "gate_run", passed: 2, failed: -1 },
     { ts: at(1), event: "toString" }, { ts: "not a date", event: "pilot" },
+    { ts: at(0), event: ["pilot"] }, { ts: 0, event: "pilot" }, { ts: { toString: null }, event: "pilot" },
+    { ts: at(0), event: { toString: null } }, null, [], "pilot",
   ]);
   assert.equal(bad.owner_actions.total, 0, "rows without an id are left out");
   assert.equal(bad.gate_pass_rate, null, "gate rows without both non-negative counts are left out");
   assert.equal(bad.idea_to_pilot_days, null);
-  assert.equal(bad.rows_ignored, 7);
+  assert.equal(bad.rows_ignored, 14);
   const empty = measure([]);
   assert.equal(empty.idea_to_pilot_days, null);
   assert.equal(empty.gate_pass_rate, null);

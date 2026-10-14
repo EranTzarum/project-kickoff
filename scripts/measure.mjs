@@ -12,7 +12,7 @@ const days = (ms) => Math.round((ms / DAY) * 10) / 10;
 
 export function measure(allRows) {
   // Only rows that match the writer's schema (log.mjs) count; a hand-edited or broken row is left out, not guessed.
-  const rows = allRows.filter((r) => isValidRow(r) && !Number.isNaN(Date.parse(r.ts)));
+  const rows = allRows.filter(isValidRow);
   const t = (r) => Date.parse(r.ts);
   const of = (e) => rows.filter((r) => r.event === e);
   const first = rows.length ? Math.min(...rows.map(t)) : null;
