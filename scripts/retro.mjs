@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Draft lesson candidates from STATE.md + .kickoff/HISTORY.jsonl; save to the user's lesson store.
-import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync, readdirSync, lstatSync } from "node:fs";
-import { spawnSync } from "node:child_process";
-import { join, resolve, dirname } from "node:path";
+// The draft lives in the user's store, never inside the project, so it can never be committed.
+import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { isValidRow, projectId } from "./log.mjs";
@@ -16,6 +16,11 @@ const unesc = (s) => s.replace(/\\\|/g, "|");
 
 export function storeDir() {
   return process.env.PROJECT_KICKOFF_HOME || join(homedir(), ".project-kickoff");
+}
+
+// <store>/drafts/<project id>.md. projectId creates .kickoff/project.json when it is missing.
+export function draftPath(root, store) {
+  return join(store, "drafts", `${projectId(root)}.md`);
 }
 
 export function readStore(store) {
@@ -124,10 +129,9 @@ export function parseCandidates(text) {
 }
 
 export function saveLessons(root, store) {
-  const candF = join(root, ".kickoff/lessons-candidates.md");
-  if (!existsSync(candF)) throw new Error("missing .kickoff/lessons-candidates.md");
+  const candF = draftPath(root, store);
+  if (!existsSync(candF)) throw new Error(`missing draft ${candF}; run retro.mjs <project-root> first`);
   const rows = parseCandidates(readFileSync(candF, "utf8"));
-  // Created on first save when missing, so two projects never share one identity in the store.
   const pid = projectId(root);
   const dup = new Set(readStore(store).filter((r) => r.project_id === pid).map((r) => r.what));
   mkdirSync(store, { recursive: true });
@@ -142,28 +146,6 @@ export function saveLessons(root, store) {
     saved++;
   }
   return { saved, skipped, duplicate };
-}
-
-// Read-only. Returns why the draft must not be written, or null when it is safe.
-export function draftTrackedReason(root, git = "git", { lstat = lstatSync, readdir = readdirSync } = {}) {
-  // Inherited GIT_* variables (GIT_DIR, GIT_WORK_TREE, GIT_CEILING_DIRECTORIES) could point git away from
-  // the project; drop them so git finds the project's own repo.
-  const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^GIT_/i.test(k)));
-  const r = spawnSync(git, ["ls-files", "--error-unmatch", "--", ".kickoff/lessons-candidates.md"], { cwd: root, encoding: "utf8", env });
-  if (r.status === 0) return "git tracks .kickoff/lessons-candidates.md, so it would be published; run: git rm --cached .kickoff/lessons-candidates.md, then retro again";
-  if (r.status === 1) return null; // a repo, file not tracked
-  // Any other answer (no git binary, no access, a damaged repo that git calls "not a git repository") is
-  // safe only when no .git at or above the project could still track the draft. Fail closed: the one
-  // exception is a .git folder we can read and that is empty (a stray folder tracks nothing).
-  // Only "does not exist" counts as absent; an access error on .git is treated as a repo we cannot read.
-  const absent = (g) => { try { lstat(g); return false; } catch (e) { return e.code === "ENOENT" || e.code === "ENOTDIR"; } };
-  const provenEmpty = (g) => { try { return readdir(g).length === 0; } catch { return false; } };
-  for (let d = resolve(root); ; d = dirname(d)) {
-    const g = join(d, ".git");
-    if (!absent(g) && !provenEmpty(g))
-      return "cannot check whether git tracks .kickoff/lessons-candidates.md (" + (r.error ? r.error.code : (r.stderr || "").trim().split("\n")[0]) + "); fix git access, then retro again";
-    if (dirname(d) === d) return null; // no repo above: nothing to publish
-  }
 }
 
 const USAGE = "usage: retro.mjs <project-root> [--force|--save] | retro.mjs --list";
@@ -183,20 +165,13 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     } catch (e) { console.error(e.message); process.exit(1); }
     process.exit(0);
   }
-  const outF = join(root, ".kickoff/lessons-candidates.md");
+  const outF = draftPath(root, storeDir());
   if (existsSync(outF) && !args.includes("--force")) { console.error(`${outF} exists; use --force`); process.exit(1); }
-  // The draft may hold project details; it must never reach git. An ignore rule does not untrack a file,
-  // so refuse when git tracks or stages it, and when that cannot be checked inside a repo.
-  const why = draftTrackedReason(root);
-  if (why) { console.error(why); process.exit(1); }
   const rows = draftCandidates(root);
-  mkdirSync(join(root, ".kickoff"), { recursive: true });
-  const ignoreF = join(root, ".kickoff/.gitignore");
-  const ignore = existsSync(ignoreF) ? readFileSync(ignoreF, "utf8") : "";
-  if (!/^lessons-candidates\.md$/m.test(ignore)) appendFileSync(ignoreF, (ignore && !ignore.endsWith("\n") ? "\n" : "") + "lessons-candidates.md\n");
+  mkdirSync(join(storeDir(), "drafts"), { recursive: true });
   writeFileSync(outF, formatCandidates(rows));
   if (!rows.length) console.log("no candidates found");
-  console.log(`${rows.length} candidates -> .kickoff/lessons-candidates.md`);
+  console.log(`${rows.length} candidates -> ${outF}`);
 }
 
 function listLessons(store) {
