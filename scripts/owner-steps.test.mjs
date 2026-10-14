@@ -145,6 +145,9 @@ test("lintMarkdown requires a filled place, action and expected result", () => {
   assert.ok(lintMarkdown(sec("1. **Where:** Console\n   **Do:**\n   **You should see:** Saved")).includes("step 1: empty action"));
   assert.ok(lintMarkdown(sec("1. **Where:**\n   **Do:** Save\n   **You should see:** Saved")).includes("step 1: empty place"));
   assert.ok(lintMarkdown(sec("1. **Where:** Console\n   **Do:** Save\n   **You should see:**")).includes("step 1: empty expected result"));
+  assert.ok(lintMarkdown(sec("1. **Do:** Click Save\n   **You should see:** Saved")).includes("step 1: missing place"));
+  const emptyDo = lintMarkdown(sec("1. **Do:**\n   **You should see:** Saved"));
+  assert.ok(emptyDo.includes("step 1: missing place") && emptyDo.includes("step 1: empty action"), emptyDo.join("; "));
   assert.deepEqual(lintMarkdown(sec("1. Open the console and press Save.\n   You should see: a green check.")), []);
 });
 

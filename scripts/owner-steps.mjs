@@ -102,9 +102,11 @@ export function lintMarkdown(text) {
     const expect = EXPECT_MARKERS.map((m) => after(text, m)).find((v) => v !== null);
     if (expect === undefined) errors.push(`step ${num}: missing expected result`);
     else if (!expect) errors.push(`step ${num}: empty expected result`);
-    if (text.includes("**Where:**")) {
-      // The labelled format: place and action must both be filled in.
-      if (!after(text, "**Where:**")) errors.push(`step ${num}: empty place`);
+    if (text.includes("**Where:**") || text.includes("**Do:**")) {
+      // The labelled format (either label present): place and action must both be there and filled in.
+      const place = after(text, "**Where:**");
+      if (place === null) errors.push(`step ${num}: missing place`);
+      else if (!place) errors.push(`step ${num}: empty place`);
       const action = after(text, "**Do:**");
       if (action === null) errors.push(`step ${num}: missing action`);
       else if (!action) errors.push(`step ${num}: empty action`);
