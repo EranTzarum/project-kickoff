@@ -98,12 +98,12 @@ test("two architecture files: the first alias wins and the conflict is reported"
 
 test("a committed .env is a high gap", (t) => {
   if (spawnSync("git", ["--version"]).status !== 0) return t.skip("git not available");
-  const dir = fixture({ ".env": "SECRET=x\n", ".env.example": "SECRET=\n" });
+  const dir = fixture({ ".env": "SECRET=x\n", ".env.example": "SECRET=\n", ".env.dist": "SECRET=\n", ".env.sample": "SECRET=\n" });
   const git = (...a) => spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.com", ...a], { cwd: dir });
   git("init", "-q"); git("add", "."); git("commit", "-q", "-m", "init");
   const r = run("adopt.mjs", [dir]);
   assert.match(r.stdout, /^GAP high: real env file \.env is committed/m);
-  assert.doesNotMatch(r.stdout, /real env file \.env\.example/);
+  for (const t of [".env.example", ".env.dist", ".env.sample"]) assert.ok(!r.stdout.includes(`real env file ${t} `), `${t} is a template, not a secret`);
   rmSync(dir, { recursive: true, force: true });
 });
 

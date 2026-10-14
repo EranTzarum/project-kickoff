@@ -68,3 +68,16 @@ test("no answers file → usage error, exit 1", () => {
   assert.equal(r.status, 1);
   assert.match(r.stderr, /usage:/);
 });
+
+test("CI installs dependencies by what the repo uses, never an unconditional npm ci", () => {
+  const dir = tmp();
+  render(dir, "--stage", "5");
+  const ci = readFileSync(join(dir, ".github/workflows/gates.yml"), "utf8");
+  assert.doesNotMatch(ci, /^\s*- run: npm ci/m, "no unconditional npm ci");
+  assert.doesNotMatch(ci, /cache: npm/, "npm cache needs a package-lock.json");
+  assert.match(ci, /pnpm-lock\.yaml/);
+  assert.match(ci, /yarn\.lock/);
+  assert.match(ci, /actions\/setup-python@v5\n\s+if: hashFiles\('requirements\.txt', 'pyproject\.toml'\) != ''/);
+  assert.match(ci, /pip install -r requirements\.txt/);
+  rmSync(dir, { recursive: true, force: true });
+});

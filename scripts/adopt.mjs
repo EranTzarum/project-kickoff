@@ -73,6 +73,8 @@ const ALIASES = {
   ".env.example": [".env.sample", ".env.template", ".env.dist"],
   ".github/workflows/gates.yml": workflows.slice(0, 1).map((f) => `.github/workflows/${f}`),
 };
+// Env template names: keys only, safe to commit. Same set as the env alias list and the env guard hook.
+const ENV_TEMPLATES = [".env.example", ".env.sample", ".env.template", ".env.dist"];
 const SUPABASE_ROWS = ["supabase/migrations/_TEMPLATE.sql", "supabase/migrations/00000000000000_auth_hook.sql",
   "scripts/db-types.mjs", ".claude/agents/rls-auditor.md"];
 // service-role-guard.js stays: .claude/settings.json wires it in, and it only warns.
@@ -111,7 +113,7 @@ try {
   const files = execFileSync("git", ["ls-files"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
   for (const f of files.split(/\r?\n/).filter(Boolean)) {
     const b = posix.basename(f);
-    if (/^\.env(\..+)?$/.test(b) && ![".env.example", ".env.sample", ".env.template"].includes(b)) {
+    if (/^\.env(\..+)?$/.test(b) && !ENV_TEMPLATES.includes(b)) {
       gap("high", "env-tracked", `real env file ${f} is committed; remove it from git and rotate its keys`);
     }
   }
