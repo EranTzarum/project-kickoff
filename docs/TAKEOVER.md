@@ -10,17 +10,18 @@ manager in the app sidebar. It works **only inside `project-kickoff/`**: edits, 
 happen in this repo. The umbrella files (`AGENTS.md`, `README.md`, `docs/`) belong to the manager
 session; ask it to update the project-kickoff rows after a big change.
 
-## State (2026-10-14, `main` @ `7887223`)
+## State (2026-10-14, `main` @ `1ac2b68`)
 
 - **Repo:** public, `main` only. Installed for Claude Code through a junction in
   `~/.claude/skills/project-kickoff`. Codex and Cursor get **copies** (Windows and WSL) in
   `~/.codex/skills/project-kickoff` and `~/.cursor/skills/project-kickoff`. Windows copies synced
-  at `7887223`; WSL copies not synced since before v2.
+  at `1ac2b68`; WSL copies not synced since before v2.
 - **What it does:** staged pre-flight (six batched questionnaires), `render.mjs` renders docs, guardrail
   hooks, CI and `.gitattributes`; `preflight.mjs` gives advisory checks (`--strict` for CI); `adopt.mjs` adopts
   an existing repo; `log.mjs` + `measure.mjs` keep and read an event ledger; `owner-steps.mjs` formats and
-  lints owner steps; `docs/LAUNCH.md` lists owner-only blockers from day 1. 106 lessons.
-- **Gate:** 10 test files, 72 tests, all passing at `7887223`; public leak check clean.
+  lints owner steps; `docs/LAUNCH.md` lists owner-only blockers from day 1; `to-crew.mjs` exports a feature's tickets to `crew.json`, `build-route.mjs`
+  detects Crew and logs the chosen route. 107 lessons.
+- **Gate:** 12 test files, 97 tests, all passing at `1ac2b68`; public leak check clean.
 
 ## Open items, best first
 
@@ -38,10 +39,9 @@ pr-gate, merge only on the owner's `merge`.
 4. **P4 Launch track** — merged (#13): `docs/LAUNCH.md` (12 items, picked by answers, later answers append);
    `owner-steps.mjs` with a strict lint (Where / Do / expected result; Hebrew labels accepted). L105, L106.
    Not in P4: the stage 2 AI-cost question — no field evidence yet; add it with a lesson when a project supplies one.
-5. **P5 Build alone or with Crew — NEXT.** Stage 6 asks per feature: build in kickoff's own loop, or export
-   `crew.json` (`id, engine, model, brief_path, write_set, accept, blocked_by` + `validate` from the gates block)
-   when the Factory is installed. No code dependency on the Factory; the format is the contract.
-6. **P6 Learn across projects** — lesson `source` + `class` columns, `retro` mode, a user-level lesson store,
+5. **P5 Build alone or with Crew** — merged (#14): ticket front matter, `to-crew.mjs` (tickets to `crew.json`,
+   gates as `validate`, refuses a `main` base), `build-route.mjs` + `build_route` event, stage 6 build-route step. L107.
+6. **P6 Learn across projects — NEXT.** lesson `source` + `class` columns, `retro` mode, a user-level lesson store,
    community lessons by PR; a rule needs 2+ projects.
 7. **P7 Opt-in telemetry + profiles** — known limit from P2: the generated CI installs Python dependencies
    with `pip install -r requirements.txt` or `pip install -e ".[dev]"`; a Poetry/uv/PDM dev group is not
@@ -50,7 +50,7 @@ pr-gate, merge only on the owner's `merge`.
    `python-fastapi-nextjs` and `single-vm-caddy` profiles; README speed promise only after measured ledgers.
    Owner action first: a telemetry backend project.
 
-## How P2–P4 were built (repeat for P5–P7)
+## How P2–P5 were built (repeat for P6–P7)
 
 - The Factory's crew skill: a feature branch `feature/<slug>` from `main`, `crew init` (then set
   `base_branch` to the feature branch — init writes `main`), three briefs under `.scratch/<slug>/issues/`
@@ -61,6 +61,9 @@ pr-gate, merge only on the owner's `merge`.
   `.git/info/exclude`).
 - Seats that passed first try: agy `claude-opus-5-5-medium` (largest ticket), cursor `composer-2.5` (small
   scripts), claude `sonnet` medium (docs). Cursor is found as `cursor-agent`.
+- **An accept command must fail when its test file is missing.** `node --test <missing file> <other file>` runs
+  the rest and exits 0: in P5 the agy worker hit its quota (429) before writing its tests and the ticket still
+  went DONE. Add `node -e "require('fs').statSync('<file>')"` to `accept` for every new test file.
 - **Never put the public leak check in a crew gate:** inside crew worktrees it compares the logo with sibling
   folders (the other worktrees) and always fails. Run it on the real checkout after the merge.
 - The leak check rejects any email address, even `example.com`; write `name (at) your-domain` instead.
