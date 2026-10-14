@@ -25,7 +25,7 @@ Ask the right questions *before* the first line of code. Generate the docs and g
 | Type `/project-kickoff` in a fresh repo and answer **six short questionnaires** | Turns your answers into **real files** (docs, `AGENTS.md`, hooks, sub-agents, gate runner, CI) and checks what's missing | A project that starts with its guardrails, plus a **build-loop checklist** for every feature |
 
 Every question exists because something specific went wrong on a real three-month build. There are
-**102 dated lessons** behind the checklist, and the agent can quote the one behind any rule.
+**104 dated lessons** behind the checklist, and the agent can quote the one behind any rule.
 
 <p align="center">
   <img src="docs/assets/stages.svg" alt="Six pre-flight stages, then a build loop" width="980">
@@ -60,7 +60,7 @@ file a script can check, and generates the guardrail so the next project does no
 - 🔎 **Advisory checker** — `preflight.mjs` prints `READY` / `MISSING` per stage plus cross-checks (env keys vs matrix, tables without RLS, functions callable by anon). Never blocks; `--strict` for CI.
 - 🛡️ **Guardrails generated, not remembered** — four hooks (env-edit, destructive SQL, service-role, migration-number), two sub-agents (quality-gate, rls-auditor), a gate runner, a safe worktree script, a clean-clone CI workflow.
 - 🔁 **Build-loop checklist per feature** — design → ticket → worktree → gates → cross-model verify → migration runbook → `STATE.md`.
-- 📚 **102 dated lessons with evidence** — every checklist item cites one. Ask *why* and get the commit, the doc line, or the chat that taught it.
+- 📚 **104 dated lessons with evidence** — every checklist item cites one. Ask *why* and get the commit, the doc line, or the chat that taught it.
 - 🧱 **Stack profiles** — Supabase + React/Vite + Vercel ships as default with a platform-limits sheet; add your own in one file.
 - 🤝 **Runs in Claude Code, Codex CLI and Cursor** — same folder, no build, no dependencies.
 
@@ -206,10 +206,11 @@ Details: [`references/adopt.md`](references/adopt.md).
 docs/KICKOFF.md              stage tracker — one row per deliverable; the checker reads this
 docs/DOMAIN.md               glossary · entities · roles · FROZEN enums · rules · dedup keys · out of scope
 docs/ARCHITECTURE.md         tenancy · privileged access · anon surface · identity trust · limits · budgets
-docs/ENV_MATRIX.md           env vars × Dev/Preview/Prod · redirect URLs · SMTP · OAuth · databases
+docs/ENV_MATRIX.md           environment tiers (one row per tier) · env vars · redirect URLs · SMTP · OAuth · databases
 docs/MIGRATION_RUNBOOK.md    naming · template rules · additive → deploy → revoke · rollback
 STATE.md                     the ONE living "where are we" file (done / in flight / next / mistakes made)
 AGENTS.md                   rules file (always / never); the only instruction file
+.gitattributes                LF for scripts and CI (*.sh, *.yml, Caddyfile, Dockerfile)
 .env.example                 keys only — cross-checked against ENV_MATRIX
 supabase/migrations/         _TEMPLATE.sql (RLS + revokes + CHECK-not-null baked in) · auth-hook recipe
 .claude/settings.json        hook wiring
@@ -224,7 +225,7 @@ scripts/                     gates.mjs · db-types.mjs · worktree-setup.ps1/.sh
 
 ## The lessons behind the checklist
 
-[`references/lessons.md`](references/lessons.md) — **102 rows**, each with a date, a category, what happened,
+[`references/lessons.md`](references/lessons.md) — **104 rows**, each with a date, a category, what happened,
 the evidence (commit hash, doc line or chat), the rule it produced and the stage that now owns it. Mined from a
 real project's git history (365 commits, 63 migrations), its docs, the author's decision notes, and the
 author's chat history across Claude Code, Codex and Cursor.
@@ -235,7 +236,7 @@ flowchart LR
     D["repo docs"] --> L
     V["decision notes"] --> L
     C["chat history: Claude, Codex, Cursor"] --> L
-    L[("lessons.md — 102 dated rows")] --> S["stages.md — questions and exit checklists"]
+    L[("lessons.md — 104 dated rows")] --> S["stages.md — questions and exit checklists"]
     L --> H["harness.md — which hook guards which lesson"]
     S --> T["templates/"]
     H --> T
@@ -258,7 +259,7 @@ AGENTS.md                                 rules for agents working on this repo 
 agents/openai.yaml                        Codex display metadata
 references/
   stages.md                               questionnaire · deliverables · exit checklist per stage (cites lessons)
-  lessons.md                              102 dated lessons
+  lessons.md                              104 dated lessons
   harness.md                              which generated file guards which lesson; what Codex/Cursor lack
   stack-profiles/supabase-react-vercel.md defaults + platform-limits sheet
 templates/
@@ -279,7 +280,7 @@ docs/assets/                              images used by this README
 ## Verify
 
 ```bash
-node --test scripts/preflight.test.mjs scripts/hooks.test.mjs scripts/render.test.mjs scripts/measure.test.mjs scripts/render-mapping.test.mjs scripts/adopt.test.mjs
+node --test scripts/preflight.test.mjs scripts/hooks.test.mjs scripts/render.test.mjs scripts/measure.test.mjs scripts/render-mapping.test.mjs scripts/adopt.test.mjs scripts/env-tiers.test.mjs scripts/line-endings.test.mjs
 ```
 
 The test renders the example answers into a temp folder and proves: every stage READY after a full render;
