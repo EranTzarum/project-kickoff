@@ -152,7 +152,7 @@ Exit checklist:
 - [ ] Workers read tickets from files; absolute cwd; stdin closed — L71
 - [ ] Model-per-role policy fixed — L74; plugin overhead audited — L75; dead branches deleted or tagged — L77
 - [ ] One instruction file, `AGENTS.md`; no `CLAUDE.md` rendered. Graphify, the standard doc set and the always-on tool checks are `/ready`'s job, not stage 5 — L76, L100
-- [ ] The stage 5 receipt lists the loading check as an owner action (Claude Code v2.1.277 or newer, no `CLAUDE.md` in the project or a parent; else a `CLAUDE.md` containing only `@AGENTS.md`) and ends with one line: run `/ready` — L100
+- [ ] The stage 5 receipt lists the loading check as an owner action (Claude Code v2.1.277 or newer, no `CLAUDE.md` in the project or a parent; else a `CLAUDE.md` containing only `@AGENTS.md`, or an `@AGENTS.md` line added to an existing one) and ends with one line: run `/ready` — L100
 - [ ] RTL lint rule and shared primitives, if RTL — L79
 - [ ] Design tokens approved by the owner before UI waves — L80
 - [ ] Tickets reference a shared context file, seats tracked — L81

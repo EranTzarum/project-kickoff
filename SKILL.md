@@ -37,7 +37,7 @@ For each stage `n` in `references/stages.md`, in order:
 3. Render the stage's deliverables from `templates/` (rule 5, rule 6).
 4. Run the checker again; print the stage line.
 5. Print the stage receipt: files written, MISSING items (if any), owner actions (dashboard clicks, secrets to set, accounts to create).
-6. Continue to the next stage without asking permission. The stage 5 receipt lists one owner action first: confirm Claude Code is v2.1.277 or newer and no `CLAUDE.md` exists in the project or a parent folder (`claude --version`); if either fails, create a `CLAUDE.md` containing only `@AGENTS.md`. It then ends with one line: `Run /ready` (it sets up graphify, the doc set and the always-on tool checks).
+6. Continue to the next stage without asking permission. The stage 5 receipt lists one owner action first: confirm Claude Code is v2.1.277 or newer and no `CLAUDE.md` exists in the project or a parent folder (`claude --version`); if either fails, create a `CLAUDE.md` containing only `@AGENTS.md`, or, if the project already has a `CLAUDE.md`, add an `@AGENTS.md` line to it and keep its contents. It then ends with one line: `Run /ready` (it sets up graphify, the doc set and the always-on tool checks).
 
 After stage 5, print the stage 6 build-loop checklist once and stop. The project is ready for its first feature.
 
