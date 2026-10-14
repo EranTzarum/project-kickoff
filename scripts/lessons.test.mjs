@@ -94,3 +94,9 @@ test("a malformed id in a row or a citation is an error, not skipped", () => {
   assert.deepEqual(citedIds(dir), ["L1", "L1O9"]);
   rmSync(dir, { recursive: true, force: true });
 });
+
+test("an indented lessons table is still linted", () => {
+  const text = doc([row("L1"), row("L 109")]).split("\n").map((l) => (l.startsWith("|") ? " " + l : l)).join("\n");
+  assert.ok(lintLessons(text).includes("L 109: malformed lesson id (expected L<number>)"));
+  assert.equal(parseLessons(text).length, 2);
+});

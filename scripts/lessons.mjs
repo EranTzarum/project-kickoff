@@ -19,8 +19,9 @@ const cells = (line) => line.trim().replace(/^\|/, "").replace(/(?<!\\)\|$/, "")
 function lessonRows(text) {
   const rows = [];
   let inTable = false;
-  for (const line of text.split(/\r?\n/)) {
-    if (!line.trim().startsWith("|")) { inTable = false; continue; }
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line.startsWith("|")) { inTable = false; continue; }
     if (/^\|\s*id\s*\|/.test(line)) { inTable = true; continue; }
     if (!inTable || /^\|[\s|:-]*$/.test(line)) continue;
     rows.push(cells(line));

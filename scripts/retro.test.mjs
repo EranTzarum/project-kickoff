@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { draftCandidates, parseCandidates, saveLessons, readStore } from "./retro.mjs";
+import { draftCandidates, parseCandidates, saveLessons, readStore, draftTrackedReason } from "./retro.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const run = (args, env = {}) => spawnSync(process.execPath, [join(here, "retro.mjs"), ...args], { encoding: "utf8", env: { ...process.env, ...env } });
@@ -146,4 +146,14 @@ test("a draft that git already tracks is never rewritten", () => {
   assert.equal(readFileSync(join(dir, ".kickoff/lessons-candidates.md"), "utf8"), "old draft\n");
   rmSync(dir, { recursive: true, force: true });
   rmSync(store, { recursive: true, force: true });
+});
+
+test("when git cannot be asked inside a repo, the draft is refused; outside any repo it is allowed", () => {
+  const repo = mkdtempSync(join(tmpdir(), "retro-nogit-"));
+  mkdirSync(join(repo, ".git"));
+  assert.match(draftTrackedReason(repo, "git-binary-that-does-not-exist"), /cannot check/);
+  rmSync(repo, { recursive: true, force: true });
+  const plain = mkdtempSync(join(tmpdir(), "retro-plain-"));
+  assert.equal(draftTrackedReason(plain), null);
+  rmSync(plain, { recursive: true, force: true });
 });
