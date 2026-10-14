@@ -165,9 +165,14 @@ const walkSh = (dir) => {
     if (e === "node_modules" || e === ".git") continue;
     const rel = dir === "." ? e : `${dir}/${e}`;
     const full = join(root, rel);
-    // No depth limit; symlinked folders are not followed, so a link cycle cannot loop.
+    // No depth limit; symlinked folders are not followed, so a link cycle cannot loop. A symlinked file is
+    // followed (statSync), because running it runs its target. A broken link is skipped.
     let isDir = false, isFile = false;
-    try { const st = lstatSync(full); isDir = st.isDirectory(); isFile = st.isFile(); } catch { continue; }
+    try {
+      const st = lstatSync(full);
+      isDir = st.isDirectory();
+      isFile = st.isFile() || (st.isSymbolicLink() && statSync(full).isFile());
+    } catch { continue; }
     if (isDir) {
       walkSh(rel);
     } else if (isFile && (e.endsWith(".sh") || e.endsWith(".bash"))) {
@@ -185,7 +190,9 @@ walkSh(".");
 if (shellScripts.length) {
   const ga = join(root, ".gitattributes");
   const gaText = existsSync(ga) ? readRaw(".gitattributes").replace(/\r\n/g, "\n") : "";
-  if (!/^\*\.sh\s+.*eol=lf/m.test(gaText)) {
+  // One rule per line: the *.sh pattern and eol=lf must be on the same line.
+  const shLf = gaText.split("\n").some((l) => /^\*\.sh[ \t]/.test(l) && /(^|[ \t])eol=lf([ \t]|$)/.test(l));
+  if (!shLf) {
     problems++;
     console.log("CHECK line-endings: .gitattributes has no \"*.sh text eol=lf\" rule");
   }

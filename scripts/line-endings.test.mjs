@@ -1,7 +1,7 @@
 // node --test scripts/line-endings.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, unlinkSync, writeFileSync, readFileSync, mkdirSync } from "node:fs";
+import { mkdtempSync, rmSync, unlinkSync, writeFileSync, readFileSync, mkdirSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -111,5 +111,24 @@ test("a CRLF shell script deep in the tree is still found, by preflight and by a
   assert.match(adopt.stdout, new RegExp(`GAP high: ${deep.replace(/[./]/g, "\\$&")} has CRLF`));
   const r = spawnSync(process.execPath, [join(here, "preflight.mjs"), dir], { encoding: "utf8" });
   assert.match(r.stdout, new RegExp(`CHECK line-endings: ${deep.replace(/[./]/g, "\\$&")} has CRLF`));
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("the *.sh eol=lf rule must be on one line of .gitattributes", () => {
+  const dir = freshProject();
+  writeFileSync(join(dir, ".gitattributes"), "*.sh\n*.yml text eol=lf\n");
+  assert.match(run("preflight.mjs", dir).stdout, /CHECK line-endings: \.gitattributes has no "\*\.sh text eol=lf" rule/);
+  writeFileSync(join(dir, ".gitattributes"), "*.sh text eol=lf\n");
+  assert.doesNotMatch(run("preflight.mjs", dir).stdout, /CHECK line-endings/);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("a symlinked shell script is checked through its target", (t) => {
+  const dir = freshProject();
+  mkdirSync(join(dir, "tools"));
+  writeFileSync(join(dir, "tools/deploy-script"), "#!/usr/bin/env bash\r\necho ok\r\n");
+  try { symlinkSync(join(dir, "tools/deploy-script"), join(dir, "scripts/deploy.sh"), "file"); }
+  catch { rmSync(dir, { recursive: true, force: true }); return t.skip("symlinks not permitted here"); }
+  assert.match(run("preflight.mjs", dir).stdout, /CHECK line-endings: scripts\/deploy\.sh has CRLF/);
   rmSync(dir, { recursive: true, force: true });
 });
