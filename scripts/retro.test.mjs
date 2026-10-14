@@ -155,10 +155,31 @@ test("a draft that git already tracks is never rewritten", () => {
 test("when git cannot be asked inside a repo, the draft is refused; outside any repo it is allowed", () => {
   const repo = mkdtempSync(join(tmpdir(), "retro-nogit-"));
   mkdirSync(join(repo, ".git"));
+  // An empty, stray .git folder tracks nothing.
+  assert.equal(draftTrackedReason(repo, "git-binary-that-does-not-exist"), null);
+  writeFileSync(join(repo, ".git", "index"), "");
   assert.match(draftTrackedReason(repo, "git-binary-that-does-not-exist"), /cannot check/);
 
   rmSync(repo, { recursive: true, force: true });
   const plain = mkdtempSync(join(tmpdir(), "retro-plain-"));
   assert.equal(draftTrackedReason(plain), null);
   rmSync(plain, { recursive: true, force: true });
+});
+
+test("a damaged repo (HEAD missing, index intact) still protects a tracked draft", () => {
+  const dir = mkdtempSync(join(tmpdir(), "retro-nohead-"));
+  const store = mkdtempSync(join(tmpdir(), "retro-store-"));
+  const git = (...a) => spawnSync("git", a, { cwd: dir, encoding: "utf8" });
+  git("init", "-q");
+  mkdirSync(join(dir, ".kickoff"));
+  writeFileSync(join(dir, ".kickoff/lessons-candidates.md"), "old draft\n");
+  git("add", ".kickoff/lessons-candidates.md");
+  rmSync(join(dir, ".git", "HEAD"));
+  writeFileSync(join(dir, "STATE.md"), "## Mistakes\n- private detail\n");
+  const r = run([dir, "--force"], { PROJECT_KICKOFF_HOME: store });
+  assert.equal(r.status, 1, r.stdout);
+  assert.match(r.stderr, /cannot check|git rm --cached/);
+  assert.equal(readFileSync(join(dir, ".kickoff/lessons-candidates.md"), "utf8"), "old draft\n");
+  rmSync(dir, { recursive: true, force: true });
+  rmSync(store, { recursive: true, force: true });
 });

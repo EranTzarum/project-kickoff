@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Draft lesson candidates from STATE.md + .kickoff/HISTORY.jsonl; save to the user's lesson store.
-import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync, statSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { join, resolve, dirname } from "node:path";
 import { homedir } from "node:os";
@@ -152,10 +152,13 @@ export function draftTrackedReason(root, git = "git") {
   const r = spawnSync(git, ["ls-files", "--error-unmatch", "--", ".kickoff/lessons-candidates.md"], { cwd: root, encoding: "utf8", env });
   if (r.status === 0) return "git tracks .kickoff/lessons-candidates.md, so it would be published; run: git rm --cached .kickoff/lessons-candidates.md, then retro again";
   if (r.status === 1) return null; // a repo, file not tracked
-  if (r.status === 128 && /not a git repository/i.test(r.stderr || "")) return null; // no repo can publish it
-  // Any other failure (no git binary, no access) is safe only when no .git exists at or above the project.
+  // Any other answer (no git binary, no access, a damaged repo that git calls "not a git repository") is
+  // safe only when no .git at or above the project could still track the draft: a .git file (worktree
+  // pointer) or a .git folder holding an index. An empty, stray .git folder tracks nothing.
   for (let d = resolve(root); ; d = dirname(d)) {
-    if (existsSync(join(d, ".git"))) return "cannot check whether git tracks .kickoff/lessons-candidates.md (" + (r.error ? r.error.code : (r.stderr || "").trim().split("\n")[0]) + "); fix git access, then retro again";
+    const g = join(d, ".git");
+    if (existsSync(g) && (!statSync(g).isDirectory() || existsSync(join(g, "index"))))
+      return "cannot check whether git tracks .kickoff/lessons-candidates.md (" + (r.error ? r.error.code : (r.stderr || "").trim().split("\n")[0]) + "); fix git access, then retro again";
     if (dirname(d) === d) return null; // no repo above: nothing to publish
   }
 }
