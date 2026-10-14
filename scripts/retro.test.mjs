@@ -166,3 +166,19 @@ test("a store reached through a junction or symlink into the project is refused"
   rmSync(outside, { recursive: true, force: true });
   rmSync(dir, { recursive: true, force: true });
 });
+
+test("a dangling draft link (target not created yet) is refused", (t) => {
+  const dir = project();
+  writeFileSync(join(dir, "STATE.md"), "## Mistakes\n- private\n");
+  const store = mkdtempSync(join(tmpdir(), "retro-store-"));
+  const f = draftPath(dir, store);
+  mkdirSync(join(store, "drafts"), { recursive: true });
+  try { symlinkSync(join(dir, "private.md"), f, "file"); }
+  catch (e) { if (e.code === "EPERM") { t.skip("file symlinks need Developer Mode on Windows"); return; } throw e; }
+  const r = run([dir], { PROJECT_KICKOFF_HOME: store });
+  assert.equal(r.status, 1, r.stdout);
+  assert.match(r.stderr, /link to a missing target/);
+  assert.equal(existsSync(join(dir, "private.md")), false);
+  rmSync(store, { recursive: true, force: true });
+  rmSync(dir, { recursive: true, force: true });
+});

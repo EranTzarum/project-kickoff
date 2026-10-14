@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Draft lesson candidates from STATE.md + .kickoff/HISTORY.jsonl; save to the user's lesson store.
 // The draft lives in the user's store, never inside the project, so it can never be committed.
-import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync, realpathSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync, realpathSync, lstatSync } from "node:fs";
 import { join, resolve, relative, isAbsolute, dirname, basename } from "node:path";
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -31,10 +31,15 @@ export function draftPath(root, store) {
   return f;
 }
 
-// realpath of the longest existing ancestor, with the missing tail appended.
+// realpath of the longest existing ancestor, with the missing tail appended. A dangling link anywhere on the
+// way (it exists for lstat, not for stat) is refused: writing through it could land anywhere.
 function physical(p) {
   let head = resolve(p), tail = [];
-  while (!existsSync(head) && dirname(head) !== head) { tail.unshift(basename(head)); head = dirname(head); }
+  const linked = (x) => { try { lstatSync(x); return true; } catch { return false; } };
+  while (!existsSync(head) && dirname(head) !== head) {
+    if (linked(head)) throw new Error(`${head} is a link to a missing target; remove it`);
+    tail.unshift(basename(head)); head = dirname(head);
+  }
   return join(realpathSync.native(head), ...tail);
 }
 
