@@ -23,6 +23,7 @@ const EXPECTED = [
   "scripts/gates.mjs", "scripts/preflight.mjs", ".github/workflows/gates.yml",
   "supabase/migrations/00000000000000_auth_hook.sql", "AGENTS.md", "scripts/worktree-setup.ps1",
   "scripts/worktree-setup.sh", ".github/workflows/keepalive.yml", ".claude/hooks/_shell.js", ".claude/hooks/package.json",
+  ".gitattributes",
 ];
 
 test("full render writes every deliverable and leaves no placeholder", () => {

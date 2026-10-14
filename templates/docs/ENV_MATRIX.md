@@ -1,19 +1,21 @@
 # Environment matrix — {{PROJECT_NAME}}
 
 One row per variable. `.env.example` lists exactly these keys (no values). The checker cross-references them.
-Scope columns say which deploy scopes receive the value. Preview never receives a production secret when it
+Tier columns say which tiers receive the value. A tier never receives a production secret when it
 shares the production database. Infra scripts fail fast on an empty required variable.
 
-| KEY | Purpose | Dev | Preview | Prod | Secret? |
-|---|---|---|---|---|---|
+{{ENV_HEADER}}
 {{ENV_ROWS}}
 
-## Origins and redirect URLs (auth)
-| Env | Origin | Auth redirect URLs registered |
-|---|---|---|
-| Dev | {{DEV_URL}} | {{DEV_URL}}/** |
-| Preview | {{PREVIEW_URL_PATTERN}} | {{PREVIEW_URL_PATTERN}}/** |
-| Prod | {{PROD_URL}} | {{PROD_URL}}/** |
+## Environment tiers
+One row per tier. Whichever database holds real users is production-grade: no resets, backups on,
+migrations only through docs/MIGRATION_RUNBOOK.md. A disposable tier never shares a database with it.
+
+| Tier | Web host | Branch | Database | API origin | Auth redirects | Real users | Disposable |
+|---|---|---|---|---|---|---|---|
+{{ENV_TIERS}}
+
+Backups for the real-user database: {{BACKUP_PLAN}}.
 
 Dev port {{DEV_PORT}} is pinned in the dev server config because the redirect URL must match exactly.
 Canonical production domain: {{PROD_URL}}. Every origin allowlist (CORS, CSP, extension, OAuth) reads it from config, never a hard-coded host.
@@ -24,12 +26,6 @@ Invite / set-password / sign-in flow is walked end-to-end in Preview by a non-te
 
 ## OAuth providers
 {{OAUTH_PROVIDERS}} — verification submitted when the feature is first scoped; unverified/testing-mode refresh tokens expire in days. One browser smoke test per OAuth flow before merge.
-
-## Databases
-| Env | Project ref | Backups |
-|---|---|---|
-| Prod | {{SUPABASE_PROJECT_ID}} | {{BACKUP_PLAN}} |
-| Test | {{TEST_PROJECT_ID}} | none needed; live suites run here and tear down what they create |
 
 ## Shell
 Commands in docs and tickets state their shell (PowerShell vs Git Bash vs WSL). PowerShell 5.1 has no `&&`; use `npm.cmd` on Windows if the execution policy blocks `npm.ps1`.
