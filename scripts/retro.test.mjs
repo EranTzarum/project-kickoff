@@ -108,3 +108,25 @@ test("--list empty and with saved row", () => {
   assert.match(listed.stdout, /avoid trap/);
   rmSync(store, { recursive: true, force: true });
 });
+
+test("the draft is git-ignored; a project without an id gets one on save; --list shows the project", () => {
+  const dir = mkdtempSync(join(tmpdir(), "retro-"));
+  const store = mkdtempSync(join(tmpdir(), "retro-store-"));
+  const env = { PROJECT_KICKOFF_HOME: store };
+  writeFileSync(join(dir, "STATE.md"), "## Mistakes\n- one\n");
+  assert.equal(run([dir], env).status, 0);
+  assert.equal(readFileSync(join(dir, ".kickoff/.gitignore"), "utf8"), "lessons-candidates.md\n");
+  assert.equal(run([dir, "--force"], env).status, 0);
+  assert.equal(readFileSync(join(dir, ".kickoff/.gitignore"), "utf8"), "lessons-candidates.md\n", "not added twice");
+  const f = join(dir, ".kickoff/lessons-candidates.md");
+  writeFileSync(f, readFileSync(f, "utf8").replace("(write the rule)", "Do it once"));
+  assert.equal(existsSync(join(dir, ".kickoff/project.json")), false);
+  assert.equal(run([dir, "--save"], env).status, 0);
+  const pid = JSON.parse(readFileSync(join(dir, ".kickoff/project.json"), "utf8")).project_id;
+  assert.equal(readStore(store)[0].project_id, pid);
+  const listed = run(["--list"], env);
+  assert.match(listed.stdout, /\| project \|/);
+  assert.ok(listed.stdout.includes(`| ${pid.slice(0, 8)} |`));
+  rmSync(dir, { recursive: true, force: true });
+  rmSync(store, { recursive: true, force: true });
+});

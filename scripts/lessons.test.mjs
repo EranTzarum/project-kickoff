@@ -82,3 +82,14 @@ test("CLI: a bad file exits 1 with the error on stderr; the repo exits 0", () =>
   assert.equal(ok.stdout.trim(), "ok: 108 lessons");
   assert.equal(run([]).status, 1);
 });
+
+test("a malformed id in a row or a citation is an error, not skipped", () => {
+  const errors = lintLessons(doc([row("L1"), row("L1O9")]), { cited: ["L1", "L1O9"] });
+  assert.ok(errors.includes("L1O9: malformed lesson id (expected L<number>)"), errors.join("; "));
+  assert.ok(errors.includes("L1O9: malformed lesson citation (expected L<number>)"), errors.join("; "));
+  const dir = mkdtempSync(join(tmpdir(), "lessons-cite-"));
+  mkdirSync(join(dir, "references"));
+  writeFileSync(join(dir, "references/stages.md"), "- a rule — L1, L1O9\n");
+  assert.deepEqual(citedIds(dir), ["L1", "L1O9"]);
+  rmSync(dir, { recursive: true, force: true });
+});

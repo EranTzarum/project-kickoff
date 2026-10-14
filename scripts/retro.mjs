@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } fr
 import { join, resolve } from "node:path";
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
-import { isValidRow } from "./log.mjs";
+import { isValidRow, projectId } from "./log.mjs";
 
 const STAGES = ["intake", "domain", "architecture", "db", "auth-env", "workspace", "build-loop"];
 const HDR = "| id | date | category | what happened | evidence | rule | stage | source | class |";
@@ -122,16 +122,11 @@ export function parseCandidates(text) {
   return rows;
 }
 
-function projectId(root) {
-  const f = join(root, ".kickoff/project.json");
-  if (!existsSync(f)) return null;
-  try { return JSON.parse(readFileSync(f, "utf8")).project_id ?? null; } catch { return null; }
-}
-
 export function saveLessons(root, store) {
   const candF = join(root, ".kickoff/lessons-candidates.md");
   if (!existsSync(candF)) throw new Error("missing .kickoff/lessons-candidates.md");
   const rows = parseCandidates(readFileSync(candF, "utf8"));
+  // Created on first save when missing, so two projects never share one identity in the store.
   const pid = projectId(root);
   const dup = new Set(readStore(store).filter((r) => r.project_id === pid).map((r) => r.what));
   mkdirSync(store, { recursive: true });
@@ -170,6 +165,10 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const rows = draftCandidates(root);
   mkdirSync(join(root, ".kickoff"), { recursive: true });
   writeFileSync(outF, formatCandidates(rows));
+  // The draft may hold project details; keep it out of git (the saved store lives outside the project).
+  const ignoreF = join(root, ".kickoff/.gitignore");
+  const ignore = existsSync(ignoreF) ? readFileSync(ignoreF, "utf8") : "";
+  if (!/^lessons-candidates\.md$/m.test(ignore)) appendFileSync(ignoreF, (ignore && !ignore.endsWith("\n") ? "\n" : "") + "lessons-candidates.md\n");
   if (!rows.length) console.log("no candidates found");
   console.log(`${rows.length} candidates -> .kickoff/lessons-candidates.md`);
 }
@@ -177,7 +176,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
 function listLessons(store) {
   const rows = readStore(store).sort((a, b) => (a.saved || "").localeCompare(b.saved || ""));
   if (!rows.length) { console.log("no saved lessons"); return; }
-  console.log("| date | category | what happened | rule | stage | class |");
-  console.log("|---|---|---|---|---|---|");
-  for (const r of rows) console.log(`| ${esc(r.date)} | ${esc(r.category)} | ${esc(r.what)} | ${esc(r.rule)} | ${esc(r.stage)} | ${esc(r.class)} |`);
+  // project = the first 8 characters of the random project id: tells two projects apart, names nothing.
+  console.log("| date | project | category | what happened | rule | stage | class |");
+  console.log("|---|---|---|---|---|---|---|");
+  for (const r of rows) console.log(`| ${esc(r.date)} | ${esc(String(r.project_id ?? "unknown").slice(0, 8))} | ${esc(r.category)} | ${esc(r.what)} | ${esc(r.rule)} | ${esc(r.stage)} | ${esc(r.class)} |`);
 }

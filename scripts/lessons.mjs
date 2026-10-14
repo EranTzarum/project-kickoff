@@ -14,8 +14,9 @@ export const CLASSES = ["PROJECT-SPECIFIC", "CANDIDATE REUSABLE", "CONFIRMED REU
 // Cells of a `| a | b |` row, split on pipes not escaped as `\|`.
 const cells = (line) => line.trim().replace(/^\|/, "").replace(/(?<!\\)\|$/, "").split(/(?<!\\)\|/).map((c) => c.trim());
 
+// Any row whose first cell starts with L, so a malformed id (L1O9) is linted, not skipped.
 const lessonRows = (text) =>
-  text.split(/\r?\n/).filter((l) => /^\|\s*L\d+\s*\|/.test(l)).map(cells);
+  text.split(/\r?\n/).filter((l) => /^\|\s*L[^|\s]*\s*\|/.test(l)).map(cells);
 
 export function parseLessons(text) {
   return lessonRows(text).map((c) => Object.fromEntries(FIELDS.map((f, i) => [f, c[i] ?? ""])));
@@ -39,6 +40,7 @@ export function lintLessons(text, { cited = [] } = {}) {
   const seen = new Set();
   for (const row of lessonRows(text)) {
     const id = row[0];
+    if (!/^L\d+$/.test(id)) { errors.push(`${id}: malformed lesson id (expected L<number>)`); continue; }
     if (row.length !== 9) { errors.push(`${id}: expected 9 cells, found ${row.length}`); continue; }
     const l = Object.fromEntries(FIELDS.map((f, i) => [f, row[i]]));
     if (seen.has(id)) errors.push(`${id}: duplicate id`);
@@ -53,16 +55,19 @@ export function lintLessons(text, { cited = [] } = {}) {
     for (const s of sources) if (!declared.has(s)) errors.push(`${id}: source "${s}" not declared in ## Sources`);
     if (l.class === "CONFIRMED REUSABLE" && sources.length < 2) errors.push(`${id}: CONFIRMED REUSABLE needs two or more sources`);
   }
-  for (const id of new Set(cited)) if (!seen.has(id)) errors.push(`${id} cited but not in lessons.md`);
+  for (const id of new Set(cited)) {
+    if (!/^L\d+$/.test(id)) errors.push(`${id}: malformed lesson citation (expected L<number>)`);
+    else if (!seen.has(id)) errors.push(`${id} cited but not in lessons.md`);
+  }
   return errors;
 }
 
-// Every word-bounded L<number> in the docs that cite lessons.
+// Every L<digit>... token in the docs that cite lessons; malformed ones (L1O9) are reported by the lint.
 export function citedIds(root) {
   return ["references/stages.md", "SKILL.md"]
     .map((p) => join(root, p))
     .filter(existsSync)
-    .flatMap((p) => readFileSync(p, "utf8").match(/\bL\d+\b/g) ?? []);
+    .flatMap((p) => readFileSync(p, "utf8").match(/\bL\d\w*/g) ?? []);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
