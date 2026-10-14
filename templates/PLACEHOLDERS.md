@@ -40,6 +40,7 @@ Replace every one of these when rendering. The checker flags any `{{...}}` left 
 | `{{ENV_ROWS}}` | env matrix rows, one column per tier (`env[].tiers[name]`, else legacy `dev`/`preview`/`prod`, else yes) | see template |
 | `{{ENV_HEADER}}` | env matrix header + separator naming the tiers | \| KEY \| Purpose \| Local \| Prod \| Secret? \| |
 | `{{ENV_TIERS}}` | one row per `environments[]` tier (derived Dev/Preview/Test/Prod from the legacy URL and project answers when absent) | \| Prod \| https://app.example.com \| main \| ... \| yes \| no \| |
+| `{{LAUNCH_ITEMS}}` | owner-only blockers from `templates/launch/items.json`: `always` items, plus `email` (`smtpProvider` set, not none), `oauth` (`oauthProviders` other than none), `payments` (`payments: true`), `ai` (`aiProvider` set, not none), `vm` (`deployTarget: "vm"`); each a checkbox heading, what it unblocks and its owner steps | see `docs/LAUNCH.md` |
 | `{{GATES}}` | gate commands, one per line | npm run typecheck |
 | `{{DEPLOY_CMD}}` | how prod deploys (from git only) | push to main |
 | `{{TYPES_TARGETS}}` | files that receive generated DB types | apps/web/src/lib/database.types.ts |
