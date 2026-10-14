@@ -10,6 +10,8 @@ Ask nothing that the profile or an earlier answer already settles.
 
 Purpose: fix the facts every later stage derives from, and set up the tracker so nothing lives only in chat.
 
+Before the questionnaire, run `retro.mjs --list` and read the user's saved lessons; raise the ones that apply. — L108
+
 Questionnaire (one call):
 1. Project name + one-line purpose + who the primary user is and on what device. *(default: agent in the field on a phone)* — L2
 2. UI languages, default first; RTL? *(default: en; no RTL)* — L3, L79
@@ -194,5 +196,5 @@ Not a one-time stage. Print on `/project-kickoff feature <name>` with the featur
 7. **Verify** with a different model family, given the original task + diff + criteria, never the worker's summary; trust the filesystem over any report. — L91, L98
 8. **Schema changed?** Runbook: additive → types regen → deploy → revoke; `rls-auditor`; anon-surface test; contract test for every new RPC. — L39, L67, L84
 9. **Data changed?** Spot-check N real records end to end; invariants, not counts; load-test fetch changes against the full dataset. — L83, L93, L94
-10. **Checkpoint**: check hard-refresh before treating a "missing" deployed feature as a bug (L96); push the branch for review, update `STATE.md` (done / in flight / next / mistakes), `vault-capture` any real decision. Never merge to main without instruction. — L69, L97
+10. **Checkpoint**: check hard-refresh before treating a "missing" deployed feature as a bug (L96); push the branch for review, update `STATE.md` (done / in flight / next / mistakes), `vault-capture` any real decision. Run `retro.mjs <root>` and save the lessons the owner agrees with. Never merge to main without instruction. — L69, L97, L108
 11. **Budgets**: identical-ticket retries ≤ 2; token/turn cap on any open-ended mandate; checkpoint at ~70 % quota. — L89, L90, L69

@@ -79,7 +79,8 @@ positives (`cp .env backup`, `sed` over SQL text): the owner overrides by hand; 
 ## Gate
 
 ```bash
-node --test scripts/preflight.test.mjs scripts/hooks.test.mjs scripts/render.test.mjs scripts/measure.test.mjs scripts/render-mapping.test.mjs scripts/adopt.test.mjs scripts/env-tiers.test.mjs scripts/line-endings.test.mjs scripts/owner-steps.test.mjs scripts/launch.test.mjs scripts/to-crew.test.mjs scripts/build-route.test.mjs
+node --test scripts/preflight.test.mjs scripts/hooks.test.mjs scripts/render.test.mjs scripts/measure.test.mjs scripts/render-mapping.test.mjs scripts/adopt.test.mjs scripts/env-tiers.test.mjs scripts/line-endings.test.mjs scripts/owner-steps.test.mjs scripts/launch.test.mjs scripts/to-crew.test.mjs scripts/build-route.test.mjs scripts/lessons.test.mjs scripts/retro.test.mjs
+node scripts/lessons.mjs --lint
 node ~/.claude/skills/readmelyzer/scripts/check-readme.mjs . --public --all-files
 ```
 
