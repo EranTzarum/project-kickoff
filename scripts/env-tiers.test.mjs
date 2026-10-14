@@ -77,3 +77,12 @@ test(".gitattributes is rendered and shell / CI files are written LF", () => {
     }
   }, "--stage", "5");
 });
+
+test("a tier named in capitals (CI) is not read as an env key by preflight", () => {
+  const answers = { ...example, environments: [...example.environments, { name: "CI", db: "-", disposable: true }] };
+  withRender(answers, (out) => {
+    const r = spawnSync(process.execPath, [join(here, "preflight.mjs"), out], { encoding: "utf8" });
+    assert.match(matrix(out), /^\| CI \|/m);
+    assert.doesNotMatch(r.stdout, /CHECK env: .*key CI /);
+  });
+});

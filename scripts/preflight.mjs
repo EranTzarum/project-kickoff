@@ -82,7 +82,9 @@ const envExample = typeof adoptMap[".env.example"] === "string" ? adoptMap[".env
 const envMatrix = typeof adoptMap["docs/ENV_MATRIX.md"] === "string" ? adoptMap["docs/ENV_MATRIX.md"] : "docs/ENV_MATRIX.md";
 if (existsSync(join(root, envExample)) && existsSync(join(root, envMatrix))) {
   const exampleKeys = new Set(read(envExample).split("\n").map((l) => l.match(/^([A-Z][A-Z0-9_]*)=/)?.[1]).filter(Boolean));
-  const matrixKeys = new Set([...read(envMatrix).matchAll(/^\|\s*([A-Z][A-Z0-9_]*)\s*\|/gm)].map((m) => m[1]).filter((k) => k !== "KEY"));
+  // Env keys live above the tiers table; a tier named in capitals ("CI", "QA") is not a key.
+  const matrixText = read(envMatrix).split("\n## Environment tiers")[0];
+  const matrixKeys = new Set([...matrixText.matchAll(/^\|\s*([A-Z][A-Z0-9_]*)\s*\|/gm)].map((m) => m[1]).filter((k) => k !== "KEY"));
   for (const k of exampleKeys) if (!matrixKeys.has(k)) { problems++; console.log(`CHECK env: ${envExample} key ${k} not in ${envMatrix}`); }
   for (const k of matrixKeys) if (!exampleKeys.has(k)) { problems++; console.log(`CHECK env: ${envMatrix} key ${k} not in ${envExample}`); }
 }
@@ -154,16 +156,23 @@ if (existsSync(join(root, envMatrix))) {
 // ---- cross-check: shell line endings ----
 const readRaw = (p) => readFileSync(join(root, p), "utf8");
 const shellScripts = [];
+// An unreadable folder or a broken link is skipped: the checker stays advisory and never crashes.
 const walkSh = (dir, depth) => {
-  for (const e of readdirSync(join(root, dir))) {
+  let entries = [];
+  try { entries = readdirSync(join(root, dir)); } catch { return; }
+  for (const e of entries) {
     if (e === "node_modules" || e === ".git") continue;
     const rel = dir === "." ? e : `${dir}/${e}`;
     const full = join(root, rel);
-    if (statSync(full).isDirectory()) {
+    let isDir = false, isFile = false;
+    try { const st = statSync(full); isDir = st.isDirectory(); isFile = st.isFile(); } catch { continue; }
+    if (isDir) {
       if (depth < 4) walkSh(rel, depth + 1);
-    } else if (e.endsWith(".sh") || e.endsWith(".bash")) {
+    } else if (isFile && (e.endsWith(".sh") || e.endsWith(".bash"))) {
       shellScripts.push(rel);
-      if (readRaw(rel).includes("\r\n")) {
+      let text = "";
+      try { text = readRaw(rel); } catch { continue; }
+      if (text.includes("\r\n")) {
         problems++;
         console.log(`CHECK line-endings: ${rel} has CRLF line endings; it fails on Linux`);
       }
