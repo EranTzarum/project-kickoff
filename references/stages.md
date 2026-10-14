@@ -176,8 +176,8 @@ Not a one-time stage. Print on `/project-kickoff feature <name>` with the featur
    ```
    ---
    id: 01-invoice-export
-   engine: codex
-   model: gpt-5
+   engine: claude
+   model: sonnet
    write_set: src/invoices, tests/invoices
    accept: node --test tests/invoices
    accept: node scripts/gates.mjs

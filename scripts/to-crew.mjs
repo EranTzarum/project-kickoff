@@ -114,6 +114,7 @@ function build(root, feature, { base, existing } = {}) {
       const { id, engine, model, write_set, accept, blocked_by, skills } = parseTicket(readFileSync(join(dir, f), "utf8"));
       const t = { id, engine, model, brief_path: `.tickets/${f}`, write_set, accept, blocked_by };
       if (skills) t.skills = skills;
+      if (tickets.some((x) => x.id === id)) throw new Error(`duplicate id: ${id}`);
       tickets.push(t);
     } catch (e) {
       problems.push(`.tickets/${f}: ${e.message}`);
