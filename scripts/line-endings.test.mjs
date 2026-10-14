@@ -132,3 +132,31 @@ test("a symlinked shell script is checked through its target", (t) => {
   assert.match(run("preflight.mjs", dir).stdout, /CHECK line-endings: scripts\/deploy\.sh has CRLF/);
   rmSync(dir, { recursive: true, force: true });
 });
+
+test("the effective *.sh rule is the last one, and -text disables it", () => {
+  const dir = freshProject();
+  const missing = /CHECK line-endings: \.gitattributes has no "\*\.sh text eol=lf" rule/;
+  for (const ga of ["*.sh text eol=lf\n*.sh text eol=crlf\n", "*.sh -text eol=lf\n"]) {
+    writeFileSync(join(dir, ".gitattributes"), ga);
+    assert.match(run("preflight.mjs", dir).stdout, missing, JSON.stringify(ga));
+  }
+  writeFileSync(join(dir, ".gitattributes"), "*.sh text eol=crlf\n*.sh text eol=lf\n");
+  assert.doesNotMatch(run("preflight.mjs", dir).stdout, missing);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("tier rows without outer pipes still report a shared real-user database", () => {
+  const dir = freshProject();
+  const m = readFileSync(matrixPath(dir), "utf8").replace(/\r\n/g, "\n");
+  const head = m.slice(0, m.indexOf("## Environment tiers"));
+  writeFileSync(matrixPath(dir), head + [
+    "## Environment tiers",
+    "Tier | Web host | Branch | Database | API origin | Auth redirects | Real users | Disposable",
+    "---|---|---|---|---|---|---|---",
+    "Prod | https://app.example.com | main | shared-db | - | - | yes | no",
+    "Test | - | - | shared-db | - | - | no | yes",
+    "",
+  ].join("\n"));
+  assert.match(run("preflight.mjs", dir).stdout, /CHECK env-tiers: database shared-db holds real users \(Prod\) and is shared with disposable tier Test/);
+  rmSync(dir, { recursive: true, force: true });
+});

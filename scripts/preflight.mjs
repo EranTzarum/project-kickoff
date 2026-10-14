@@ -119,9 +119,11 @@ if (existsSync(join(root, envMatrix))) {
     const tiers = [];
     for (const line of norm.slice(sec).split("\n")) {
       if (line.startsWith("## ") && tiers.length) break;
-      if (!line.startsWith("|")) continue;
+      if (!/(?<!\\)\|/.test(line)) continue; // a table row, with or without outer pipes
       // Split on unescaped pipes only; render.mjs writes a | inside a value as \|.
-      const cells = line.trim().slice(1, -1).split(/(?<!\\)\|/).map((c) => c.trim().replace(/\\\|/g, "|"));
+      // Outer pipes are optional in Markdown: strip them only when present, so the last cell is never cut.
+      const body = line.trim().replace(/^\|/, "").replace(/(?<!\\)\|$/, "");
+      const cells = body.split(/(?<!\\)\|/).map((c) => c.trim().replace(/\\\|/g, "|"));
       if (!cells[0] || cells[0] === "Tier" || /^-+$/.test(cells[0])) continue;
       if (cells.length < 8) continue;
       tiers.push({ name: cells[0], db: cells[3], real: cells[6], disp: cells[7] });
@@ -191,7 +193,11 @@ if (shellScripts.length) {
   const ga = join(root, ".gitattributes");
   const gaText = existsSync(ga) ? readRaw(".gitattributes").replace(/\r\n/g, "\n") : "";
   // One rule per line: the *.sh pattern and eol=lf must be on the same line.
-  const shLf = gaText.split("\n").some((l) => /^\*\.sh[ \t]/.test(l) && /(^|[ \t])eol=lf([ \t]|$)/.test(l));
+  // Git applies the LAST matching line, so the effective *.sh setting is the last `*.sh` line's: it must set
+  // eol=lf and must not turn normalisation off with -text.
+  const shLines = gaText.split("\n").map((l) => l.trim()).filter((l) => /^\*\.sh[ \t]/.test(l));
+  const last = (shLines.at(-1) ?? "").split(/[ \t]+/).slice(1);
+  const shLf = last.includes("eol=lf") && !last.includes("-text");
   if (!shLf) {
     problems++;
     console.log("CHECK line-endings: .gitattributes has no \"*.sh text eol=lf\" rule");
