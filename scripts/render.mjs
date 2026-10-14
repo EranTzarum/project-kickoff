@@ -40,8 +40,13 @@ const STAGE_FILES = {
     ["scripts/worktree-setup.ps1", "scripts/worktree-setup.ps1"],
     ["scripts/worktree-setup.sh", "scripts/worktree-setup.sh"],
     ["ci/gates.yml", ".github/workflows/gates.yml"],
+    ["git/gitattributes", ".gitattributes"],
   ],
 };
+
+// Shell, CI, Caddy and Docker files break on CRLF, so they are written LF whatever the template's endings on disk.
+const LF_ONLY = /(\.(sh|bash|ya?ml)|(^|\/)(Caddyfile|Dockerfile))$/;
+const writeOut = (dst, target, text) => writeFileSync(target, LF_ONLY.test(dst) ? text.replace(/\r\n/g, "\n") : text);
 
 const args = process.argv.slice(2);
 const root = resolve(args[0] ?? ".");
@@ -58,7 +63,23 @@ const a = JSON.parse(readFileSync(answersPath, "utf8"));
 // Composite placeholders derived from structured answers so templates stay plain text.
 const quote = (s) => JSON.stringify(String(s));
 const envKeys = (a.env ?? []).map((e) => (typeof e === "string" ? { key: e } : e));
+// Environments are a list of tiers; old answer files get the four tiers the fixed columns implied.
+const glob = (u) => (u ? `${u}/**` : undefined);
+const tiers = a.environments?.length ? a.environments : [
+  { name: "Dev", web: a.devUrl, db: "local", redirects: glob(a.devUrl), realUsers: false, disposable: true },
+  { name: "Preview", web: a.previewUrlPattern, branch: "non-main", db: a.testProjectId, redirects: glob(a.previewUrlPattern), realUsers: false, disposable: false },
+  { name: "Test", db: a.testProjectId, realUsers: false, disposable: true },
+  { name: "Prod", web: a.prodUrl, branch: "main", db: a.supabaseProjectId, redirects: glob(a.prodUrl), realUsers: true, disposable: false },
+];
+const cell = (v) => (v === undefined || v === null || v === "" ? "-" : String(v));
+const yn = (b) => (b ? "yes" : "no");
+const LEGACY_SCOPE = { Dev: "dev", Preview: "preview", Prod: "prod" };
+const scope = (e, name) => e.tiers?.[name] ?? e[LEGACY_SCOPE[name]] ?? "yes";
 const derived = {
+  ENV_TIERS: tiers
+    .map((t) => `| ${[t.name, t.web, t.branch, t.db, t.api, t.redirects].map(cell).join(" | ")} | ${yn(t.realUsers)} | ${yn(t.disposable)} |`)
+    .join("\n"),
+  ENV_HEADER: `| KEY | Purpose | ${tiers.map((t) => cell(t.name)).join(" | ")} | Secret? |\n|---|---|${tiers.map(() => "---|").join("")}---|`,
   DATE: new Date().toISOString().slice(0, 10),
   SERVICE_ROLE_DIRS_JS: (a.serviceRoleDirs ?? []).map(quote).join(",\n  "),
   TYPES_TARGETS_JS: (a.typesTargets ?? []).map(quote).join(",\n  "),
@@ -68,7 +89,7 @@ const derived = {
   SERVICE_ROLE_DIRS: (a.serviceRoleDirs ?? []).join(", "),
   ENV_KEYS: envKeys.map((e) => `${e.key}=`).join("\n"),
   ENV_ROWS: envKeys
-    .map((e) => `| ${e.key} | ${e.purpose ?? ""} | ${e.dev ?? "yes"} | ${e.preview ?? "yes"} | ${e.prod ?? "yes"} | ${e.secret ? "yes" : "no"} |`)
+    .map((e) => `| ${e.key} | ${e.purpose ?? ""} | ${tiers.map((t) => scope(e, t.name)).join(" | ")} | ${e.secret ? "yes" : "no"} |`)
     .join("\n"),
   GATES: (a.gates ?? []).join("\n"),
   PLATFORM_LIMITS: (a.platformLimits ?? []).map((l) => `- ${l}`).join("\n"),
@@ -132,7 +153,7 @@ for (const [stage, files] of Object.entries(STAGE_FILES)) {
     if (existsSync(target) && !force) { console.log(`skip   ${dst} (exists)`); skipped++; continue; }
     mkdirSync(dirname(target), { recursive: true });
     const out = render(readFileSync(join(T, src), "utf8"));
-    writeFileSync(target, out);
+    writeOut(dst, target, out);
     const left = out.match(/\{\{[A-Z0-9_]+\}\}/g);
     console.log(`write  ${dst}${left ? `  (unfilled: ${[...new Set(left)].join(" ")})` : ""}`);
     written++;
@@ -151,6 +172,6 @@ if (onlyStage === null || onlyStage === 5) {
 }
 if (a.freeTier && (onlyStage === null || onlyStage === 5)) {
   const dst = join(root, ".github/workflows/keepalive.yml");
-  if (!existsSync(dst) || force) { mkdirSync(dirname(dst), { recursive: true }); writeFileSync(dst, render(readFileSync(join(T, "ci/keepalive.yml"), "utf8"))); console.log("write  .github/workflows/keepalive.yml"); written++; }
+  if (!existsSync(dst) || force) { mkdirSync(dirname(dst), { recursive: true }); writeOut(dst, dst, render(readFileSync(join(T, "ci/keepalive.yml"), "utf8"))); console.log("write  .github/workflows/keepalive.yml"); written++; }
 }
 console.log(`\n${written} written, ${skipped} skipped`);

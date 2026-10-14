@@ -32,6 +32,12 @@
   "devPort": "5173",
   "smtpProvider": "Resend",
   "oauthProviders": ["none"],
+  "environments": [
+    { "name": "Local", "web": "http://localhost:5173", "branch": "-", "db": "local", "api": "http://localhost:8000", "redirects": "http://localhost:5173/**", "realUsers": false, "disposable": true },
+    { "name": "Preview", "web": "https://*-example.vercel.app", "branch": "non-main", "db": "tttttttttttttttttttt", "redirects": "https://*-example.vercel.app/**", "realUsers": false, "disposable": false },
+    { "name": "Test", "db": "tttttttttttttttttttt", "realUsers": false, "disposable": true },
+    { "name": "Prod", "web": "https://crm.example.com", "branch": "main", "db": "abcdefghijklmnopqrst", "api": "https://crm.example.com/api", "redirects": "https://crm.example.com/**", "realUsers": true, "disposable": false }
+  ],
   "env": [
     { "key": "VITE_SUPABASE_URL", "purpose": "web → Supabase", "secret": false },
     { "key": "VITE_SUPABASE_ANON_KEY", "purpose": "web anon key", "secret": false },

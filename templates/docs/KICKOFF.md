@@ -50,6 +50,7 @@ Advisory only: a MISSING line is a to-do, not a stop sign. `--strict` is for CI.
 | Gate runner | `scripts/gates.mjs` |
 | Worktree setup | `scripts/worktree-setup.ps1` |
 | CI gates | `.github/workflows/gates.yml` |
+| Line endings (LF for scripts, CI, Caddy, Docker) | `.gitattributes` |
 
 ## Gates
 Commands `scripts/gates.mjs` runs, in order. Each must pass in a clean worktree with no `.env`.

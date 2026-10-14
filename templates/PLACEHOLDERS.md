@@ -37,7 +37,9 @@ Replace every one of these when rendering. The checker flags any `{{...}}` left 
 | `{{DEV_PORT}}` | the pinned dev port | 5173 |
 | `{{SMTP_PROVIDER}}` | custom auth mailer | Resend |
 | `{{OAUTH_PROVIDERS}}` | providers needing verification | Google Calendar |
-| `{{ENV_ROWS}}` | env matrix rows | see template |
+| `{{ENV_ROWS}}` | env matrix rows, one column per tier (`env[].tiers[name]`, else legacy `dev`/`preview`/`prod`, else yes) | see template |
+| `{{ENV_HEADER}}` | env matrix header + separator naming the tiers | \| KEY \| Purpose \| Local \| Prod \| Secret? \| |
+| `{{ENV_TIERS}}` | one row per `environments[]` tier (derived Dev/Preview/Test/Prod from the legacy URL and project answers when absent) | \| Prod \| https://app.example.com \| main \| ... \| yes \| no \| |
 | `{{GATES}}` | gate commands, one per line | npm run typecheck |
 | `{{DEPLOY_CMD}}` | how prod deploys (from git only) | push to main |
 | `{{TYPES_TARGETS}}` | files that receive generated DB types | apps/web/src/lib/database.types.ts |
