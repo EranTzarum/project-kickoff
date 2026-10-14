@@ -24,6 +24,7 @@ follow depend on the event:
 | `blocker` | the agent, when work stops on the owner | optional `id`, `note` |
 | `adopt` | `adopt.mjs --write` | `mapped`, `gaps` |
 | `pilot` | the agent, when the first real user signs in | — |
+| `build_route` | `build-route.mjs --choose` | `route` (`kickoff` or `crew`) |
 
 Log by hand: `node <skill>/scripts/log.mjs <project-root> <event> [--stage N] [--id X] [--note "..."]`.
 
@@ -40,6 +41,7 @@ never as zero.
 | gate pass rate | the share of `gate_run` rows with `failed = 0` |
 | regenerations | the count of `regenerate` events (rework on a deliverable) |
 | blockers | the count of `blocker` events |
+| build routes | count of `build_route` rows by `route` (`kickoff`, `crew`; both zero when none) |
 | rows ignored | rows that do not match their event's schema (the same check `log.mjs` applies when writing); left out of every metric, never guessed |
 
 ## Baseline

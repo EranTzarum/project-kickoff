@@ -26,6 +26,7 @@ export const SCHEMA = {
   owner_action_done: { id: isId },
   blocker: {},
   pilot: {},
+  build_route: { route: (v) => v === "kickoff" || v === "crew" },
 };
 export const EVENTS = Object.keys(SCHEMA);
 
