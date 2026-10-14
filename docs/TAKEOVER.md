@@ -35,7 +35,7 @@ pr-gate, merge only on the owner's `merge`.
 1. **P1 Measure** — done in this branch: `.kickoff/HISTORY.jsonl`, `log.mjs`, `measure.mjs`, `docs/METRICS.md`, L101.
 2. **P2 Adopt** — done in this branch: `/project-kickoff adopt` for existing repos: map existing docs, render only what is missing,
    gap report ranked by risk; `status` on a repo with code says "run adopt".
-3. **P3 Field fixes** — environment tiers as data (Local/CI/Test/Beta/Prod) with a shared-DB check; Windows-safe
+3. **P3 Field fixes** — done in this branch: environment tiers as data (Local/CI/Test/Beta/Prod) with a shared-DB check; Windows-safe
    `.gitattributes` and a CRLF-in-`.sh` check.
 4. **P4 Launch track** — `docs/LAUNCH.md` of owner-only blockers from day 1; owner steps validated by a script
    in the `## What you need to do` format.
@@ -58,7 +58,7 @@ positives (`cp .env backup`, `sed` over SQL text): the owner overrides by hand; 
 ## Gate
 
 ```bash
-node --test scripts/preflight.test.mjs scripts/hooks.test.mjs scripts/render.test.mjs scripts/measure.test.mjs scripts/render-mapping.test.mjs scripts/adopt.test.mjs
+node --test scripts/preflight.test.mjs scripts/hooks.test.mjs scripts/render.test.mjs scripts/measure.test.mjs scripts/render-mapping.test.mjs scripts/adopt.test.mjs scripts/env-tiers.test.mjs scripts/line-endings.test.mjs
 node ~/.claude/skills/readmelyzer/scripts/check-readme.mjs . --public --all-files
 ```
 

@@ -118,6 +118,7 @@ Questionnaire (one call):
 2. Custom SMTP provider for auth mail. *(default: Resend)* — L52
 3. OAuth providers to verify, if any. *(default: none)* — L54
 4. Does Preview share the production DB? If yes, Preview gets no prod secrets. *(default: separate test DB for Preview)* — L56
+5. Environment tiers: which tiers exist (Local, CI, Test, Beta, Prod …), and for each one the web host, branch, database, API origin and auth redirects; which hold real users and which are disposable. *(default: Dev / Preview / Test / Prod derived from the URLs and project refs)* — L103
 
 Deliverables: `docs/ENV_MATRIX.md`, `.env.example`.
 
@@ -129,6 +130,7 @@ Exit checklist (owner actions, listed in the tracker log):
 - [ ] Env matrix set in the hosting dashboard; bot git author valid — L56, L57
 - [ ] Local permission/settings files gitignored — L58
 - [ ] tsconfig target matches the hosting runtime; CI build before first deploy — L59
+- [ ] Every tier is a row in docs/ENV_MATRIX.md; the real-user database is production-grade (no resets, backups on, runbook migrations) and shared with no disposable tier — L103
 
 ---
 
@@ -158,6 +160,7 @@ Exit checklist:
 - [ ] RTL lint rule and shared primitives, if RTL — L79
 - [ ] Design tokens approved by the owner before UI waves — L80
 - [ ] Tickets reference a shared context file, seats tracked — L81
+- [ ] .gitattributes pins *.sh, *.yml, Caddyfile and Dockerfile to LF; no CRLF shell script — L104
 
 ---
 

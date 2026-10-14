@@ -5,9 +5,11 @@
 //   env:        keys in .env.example ⊆ keys in docs/ENV_MATRIX.md and vice versa
 //   migrations: every created table has RLS enabled; every created function has a revoke from anon;
 //               no two migration files share a prefix
+//   env-tiers:  real-user databases must not be shared with disposable tiers; no tier is both
+//   line-endings: shell scripts must be LF; .gitattributes must pin *.sh eol=lf when .sh files exist
 // Prints one line per stage and per failed cross-check. Exit 0 always, except --strict with any
 // MISSING/CHECK line → exit 1 (for CI). CRLF-tolerant. No dependencies.
-import { readFileSync, existsSync, statSync, readdirSync, appendFileSync } from "node:fs";
+import { readFileSync, existsSync, statSync, lstatSync, readdirSync, appendFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 const args = process.argv.slice(2);
@@ -80,7 +82,9 @@ const envExample = typeof adoptMap[".env.example"] === "string" ? adoptMap[".env
 const envMatrix = typeof adoptMap["docs/ENV_MATRIX.md"] === "string" ? adoptMap["docs/ENV_MATRIX.md"] : "docs/ENV_MATRIX.md";
 if (existsSync(join(root, envExample)) && existsSync(join(root, envMatrix))) {
   const exampleKeys = new Set(read(envExample).split("\n").map((l) => l.match(/^([A-Z][A-Z0-9_]*)=/)?.[1]).filter(Boolean));
-  const matrixKeys = new Set([...read(envMatrix).matchAll(/^\|\s*([A-Z][A-Z0-9_]*)\s*\|/gm)].map((m) => m[1]).filter((k) => k !== "KEY"));
+  // Env keys live above the tiers table; a tier named in capitals ("CI", "QA") is not a key.
+  const matrixText = read(envMatrix).split("\n## Environment tiers")[0];
+  const matrixKeys = new Set([...matrixText.matchAll(/^\|\s*([A-Z][A-Z0-9_]*)\s*\|/gm)].map((m) => m[1]).filter((k) => k !== "KEY"));
   for (const k of exampleKeys) if (!matrixKeys.has(k)) { problems++; console.log(`CHECK env: ${envExample} key ${k} not in ${envMatrix}`); }
   for (const k of matrixKeys) if (!exampleKeys.has(k)) { problems++; console.log(`CHECK env: ${envMatrix} key ${k} not in ${envExample}`); }
 }
@@ -102,6 +106,101 @@ if (existsSync(migDir)) {
       const fn = m[1];
       if (!new RegExp(`revoke\\s+(?:execute|all)\\s+on\\s+function\\s+(?:public\\.)?"?${fn}"?[^;]*\\bfrom\\b[^;]*\\b(anon|public)\\b`).test(sql)) { problems++; console.log(`CHECK migrations: ${f} creates function ${fn}() without a revoke from anon/public`); }
     }
+  }
+}
+
+// ---- cross-check: environment tiers (docs/ENV_MATRIX.md or adopt-mapped path) ----
+const skipDb = new Set(["-", "local", "none", "n/a", ""]);
+const yes = (v) => v === "yes";
+if (existsSync(join(root, envMatrix))) {
+  const norm = read(envMatrix);
+  const sec = norm.indexOf("## Environment tiers");
+  if (sec >= 0) {
+    const tiers = [];
+    for (const line of norm.slice(sec).split("\n")) {
+      if (line.startsWith("## ") && tiers.length) break;
+      if (!/(?<!\\)\|/.test(line)) continue; // a table row, with or without outer pipes
+      // Split on unescaped pipes only; render.mjs writes a | inside a value as \|.
+      // Outer pipes are optional in Markdown: strip them only when present, so the last cell is never cut.
+      const body = line.trim().replace(/^\|/, "").replace(/(?<!\\)\|$/, "");
+      const cells = body.split(/(?<!\\)\|/).map((c) => c.trim().replace(/\\\|/g, "|"));
+      if (!cells[0] || cells[0] === "Tier" || /^-+$/.test(cells[0])) continue;
+      if (cells.length < 8) continue;
+      tiers.push({ name: cells[0], db: cells[3], real: cells[6], disp: cells[7] });
+    }
+    if (tiers.length) {
+      for (const t of tiers) {
+        if (yes(t.real) && yes(t.disp)) {
+          problems++;
+          console.log(`CHECK env-tiers: tier ${t.name} is marked both real users and disposable`);
+        }
+      }
+      const byDb = new Map();
+      for (const t of tiers) {
+        if (skipDb.has(t.db)) continue;
+        if (!byDb.has(t.db)) byDb.set(t.db, []);
+        byDb.get(t.db).push(t);
+      }
+      for (const [db, group] of byDb) {
+        const real = group.filter((t) => yes(t.real));
+        const disp = group.filter((t) => yes(t.disp));
+        for (const r of real) {
+          for (const d of disp) {
+            if (r.name === d.name) continue;
+            problems++;
+            console.log(`CHECK env-tiers: database ${db} holds real users (${r.name}) and is shared with disposable tier ${d.name}`);
+          }
+        }
+      }
+    }
+  }
+}
+
+// ---- cross-check: shell line endings ----
+const readRaw = (p) => readFileSync(join(root, p), "utf8");
+const shellScripts = [];
+// An unreadable folder or a broken link is skipped: the checker stays advisory and never crashes.
+const walkSh = (dir) => {
+  let entries = [];
+  try { entries = readdirSync(join(root, dir)); } catch { return; }
+  for (const e of entries) {
+    if (e === "node_modules" || e === ".git") continue;
+    const rel = dir === "." ? e : `${dir}/${e}`;
+    const full = join(root, rel);
+    // No depth limit; symlinked folders are not followed, so a link cycle cannot loop. A symlinked file is
+    // followed (statSync), because running it runs its target. A broken link is skipped.
+    let isDir = false, isFile = false;
+    try {
+      const st = lstatSync(full);
+      isDir = st.isDirectory();
+      isFile = st.isFile() || (st.isSymbolicLink() && statSync(full).isFile());
+    } catch { continue; }
+    if (isDir) {
+      walkSh(rel);
+    } else if (isFile && (e.endsWith(".sh") || e.endsWith(".bash"))) {
+      shellScripts.push(rel);
+      let text = "";
+      try { text = readRaw(rel); } catch { continue; }
+      if (text.includes("\r\n")) {
+        problems++;
+        console.log(`CHECK line-endings: ${rel} has CRLF line endings; it fails on Linux`);
+      }
+    }
+  }
+};
+walkSh(".");
+if (shellScripts.length) {
+  const ga = join(root, ".gitattributes");
+  const gaText = existsSync(ga) ? readRaw(".gitattributes").replace(/\r\n/g, "\n") : "";
+  // One rule per line: the *.sh pattern and eol=lf must be on the same line.
+  // Git applies the LAST matching line, so the effective *.sh setting is the last `*.sh` line's: it must set
+  // eol=lf and must not turn normalisation off with -text.
+  const shLines = gaText.split("\n").map((l) => l.trim()).filter((l) => /^\*\.sh[ \t]/.test(l));
+  const last = (shLines.at(-1) ?? "").split(/[ \t]+/).slice(1);
+  const shLf = last.includes("eol=lf") && !last.includes("-text");
+  if (!shLf) {
+    problems++;
+    console.log("CHECK line-endings: .gitattributes has no \"*.sh text eol=lf\" rule");
   }
 }
 
