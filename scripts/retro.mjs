@@ -25,10 +25,16 @@ export function draftPath(root, store) {
   const pid = projectId(root);
   if (!/^[0-9a-f]{8,64}$/.test(String(pid))) throw new Error(`.kickoff/project.json has an invalid project_id; expected hex`);
   const f = resolve(store, "drafts", `${pid}.md`);
-  // Compare physical paths: a junction or symlink in the store path (or an existing draft link) is followed.
-  const rel = relative(physical(root), physical(f));
-  if (rel === "" || (rel.split(/[\\/]/)[0] !== ".." && !isAbsolute(rel))) throw new Error(`the lesson store ${resolve(store)} is inside the project; set PROJECT_KICKOFF_HOME outside it`);
+  for (const p of [store, f, join(store, "lessons.jsonl")]) assertOutside(root, p);
   return f;
+}
+
+// Refuse a store path inside the project, by name or through a junction/symlink (both checks, so a store
+// inside the project with its drafts linked out is refused too).
+function assertOutside(root, p) {
+  const inside = (a, b) => { const rel = relative(a, b); return rel === "" || (rel.split(/[\\/]/)[0] !== ".." && !isAbsolute(rel)); };
+  if (inside(resolve(root), resolve(p)) || inside(physical(root), physical(p)))
+    throw new Error(`the lesson store ${resolve(p)} is inside the project; set PROJECT_KICKOFF_HOME outside it`);
 }
 
 // realpath of the longest existing ancestor, with the missing tail appended. A dangling link anywhere on the
@@ -160,6 +166,7 @@ export function saveLessons(root, store) {
   if (!existsSync(candF)) throw new Error(`missing draft ${candF}; run retro.mjs <project-root> first`);
   const rows = parseCandidates(readFileSync(candF, "utf8"));
   const pid = projectId(root);
+  assertOutside(root, join(store, "lessons.jsonl"));
   const dup = new Set(readStore(store).filter((r) => r.project_id === pid).map((r) => r.what));
   mkdirSync(store, { recursive: true });
   const f = join(store, "lessons.jsonl");

@@ -182,3 +182,19 @@ test("a dangling draft link (target not created yet) is refused", (t) => {
   rmSync(store, { recursive: true, force: true });
   rmSync(dir, { recursive: true, force: true });
 });
+
+test("a store inside the project is refused even when its drafts folder links outside", () => {
+  const dir = project();
+  writeFileSync(join(dir, "STATE.md"), "## Mistakes\n- private\n");
+  const store = join(dir, "store");
+  mkdirSync(store);
+  const outside = mkdtempSync(join(tmpdir(), "retro-out-"));
+  symlinkSync(outside, join(store, "drafts"), "junction");
+  const r = run([dir], { PROJECT_KICKOFF_HOME: store });
+  assert.equal(r.status, 1, r.stdout);
+  assert.match(r.stderr, /inside the project/);
+  assert.equal(run([dir, "--save"], { PROJECT_KICKOFF_HOME: store }).status, 1);
+  assert.equal(existsSync(join(store, "lessons.jsonl")), false);
+  rmSync(outside, { recursive: true, force: true });
+  rmSync(dir, { recursive: true, force: true });
+});
