@@ -32,6 +32,9 @@
   "devPort": "5173",
   "smtpProvider": "Resend",
   "oauthProviders": ["none"],
+  "payments": false,
+  "aiProvider": "none",
+  "deployTarget": "vercel",
   "environments": [
     { "name": "Local", "web": "http://localhost:5173", "branch": "-", "db": "local", "api": "http://localhost:8000", "redirects": "http://localhost:5173/**", "realUsers": false, "disposable": true },
     { "name": "Preview", "web": "https://*-example.vercel.app", "branch": "non-main", "db": "tttttttttttttttttttt", "redirects": "https://*-example.vercel.app/**", "realUsers": false, "disposable": false },

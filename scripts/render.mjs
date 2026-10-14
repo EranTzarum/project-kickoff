@@ -9,13 +9,14 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync } from
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { logEvent } from "./log.mjs";
+import { formatSteps } from "./owner-steps.mjs";
 
 const SKILL = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const T = join(SKILL, "templates");
 
 // template (relative to templates/) → target (relative to project root), grouped by stage
 const STAGE_FILES = {
-  0: [["docs/KICKOFF.md", "docs/KICKOFF.md"], ["docs/STATE.md", "STATE.md"]],
+  0: [["docs/KICKOFF.md", "docs/KICKOFF.md"], ["docs/STATE.md", "STATE.md"], ["docs/LAUNCH.md", "docs/LAUNCH.md"]],
   1: [["docs/DOMAIN.md", "docs/DOMAIN.md"]],
   2: [["docs/ARCHITECTURE.md", "docs/ARCHITECTURE.md"]],
   3: [
@@ -78,7 +79,27 @@ const cell = (v) => (v === undefined || v === null || v === "" ? "-" : cellText(
 const yn = (b) => (b ? "yes" : "no");
 const LEGACY_SCOPE = { Dev: "dev", Preview: "preview", Prod: "prod" };
 const scope = (e, name) => e.tiers?.[name] ?? e[LEGACY_SCOPE[name]] ?? "yes";
+// Launch track: owner-only blockers picked from the catalog by what the project uses; missing answer = not selected.
+const set = (v) => typeof v === "string" && v.trim() !== "" && v !== "none";
+const launchWhen = {
+  always: true,
+  email: set(a.smtpProvider),
+  oauth: (a.oauthProviders ?? []).some((p) => p !== "none"),
+  payments: a.payments === true,
+  ai: set(a.aiProvider),
+  vm: a.deployTarget === "vm",
+};
+const launchItems = JSON.parse(readFileSync(join(T, "launch/items.json"), "utf8"))
+  .filter((i) => launchWhen[i.when])
+  .map((i) => [
+    `## [ ] ${i.title} (\`${i.id}\`, ~${i.minutes} min)`, "",
+    `Unblocks: ${i.unblocks}`, "",
+    ...(i.verified ? [] : ["_Click paths not yet verified against the provider's current UI; check its docs if a menu differs._", ""]),
+    formatSteps(i.steps, { heading: null }),
+  ].join("\n"))
+  .join("\n");
 const derived = {
+  LAUNCH_ITEMS: launchItems.trimEnd(),
   ENV_TIERS: tiers
     .map((t) => `| ${[t.name, t.web, t.branch, t.db, t.api, t.redirects].map(cell).join(" | ")} | ${yn(t.realUsers)} | ${yn(t.disposable)} |`)
     .join("\n"),

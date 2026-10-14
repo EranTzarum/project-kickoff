@@ -15,7 +15,7 @@ const render = (dir, ...extra) => spawnSync(process.execPath, [join(here, "rende
 const tmp = () => mkdtempSync(join(tmpdir(), "render-"));
 
 const EXPECTED = [
-  "docs/KICKOFF.md", "STATE.md", "docs/DOMAIN.md", "docs/ARCHITECTURE.md", "docs/MIGRATION_RUNBOOK.md",
+  "docs/KICKOFF.md", "STATE.md", "docs/LAUNCH.md", "docs/DOMAIN.md", "docs/ARCHITECTURE.md", "docs/MIGRATION_RUNBOOK.md",
   "docs/ENV_MATRIX.md", ".env.example", "supabase/migrations/_TEMPLATE.sql", "scripts/db-types.mjs",
   ".claude/settings.json", ".claude/hooks/block-env-edit.js", ".claude/hooks/block-destructive-sql.js",
   ".claude/hooks/migration-number-check.js", ".claude/hooks/service-role-guard.js",

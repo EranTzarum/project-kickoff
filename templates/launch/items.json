@@ -1,0 +1,109 @@
+[
+  {
+    "id": "owner-account", "title": "Dedicated owner account", "when": "always", "minutes": 20,
+    "unblocks": "every other signup below; recovery when a sign-in lockout hits on day 1",
+    "verified": false,
+    "steps": [
+      { "place": "Your email provider → Create account", "action": "Create a business email used only for this project's services.", "value": "ops@example.com", "expect": "The new inbox receives a welcome message." },
+      { "place": "That account → Security → Passkeys", "action": "Add a passkey on your own device, before many sign-in attempts can lock the new account.", "expect": "The passkey is listed under sign-in methods." },
+      { "place": "That account → Security → Backup codes", "action": "Generate backup codes and store them offline (printed or in a password manager).", "expect": "The page shows the codes were generated, with a date." },
+      { "place": "That account → Security → Recovery email", "action": "Add a recovery email you already control and confirm it.", "expect": "The recovery email shows as verified." }
+    ]
+  },
+  {
+    "id": "billing-caps", "title": "Billing with hard spend caps", "when": "always", "minutes": 30,
+    "unblocks": "paid tiers and API usage without a surprise bill or a mid-pilot suspension",
+    "verified": false,
+    "steps": [
+      { "place": "Each paid service → Billing page (hosting provider, database, AI provider, error monitor)", "action": "Add a payment method and any required credit.", "expect": "The billing page shows an active payment method and no unpaid balance." },
+      { "place": "Each paid service → Billing → Spend limit or budget", "action": "Set a hard monthly cap, not only an alert.", "value": "50 USD", "expect": "The cap is listed as active for the current month." },
+      { "place": "Each paid service → Billing → Alerts", "action": "Add an alert at 50% and 90% of the cap, sent to the owner account.", "expect": "Two alert thresholds are listed with the owner email." }
+    ]
+  },
+  {
+    "id": "domain-dns", "title": "Domain and DNS", "when": "always", "minutes": 30,
+    "unblocks": "the production URL, auth redirect URLs and mail sender verification",
+    "verified": false,
+    "steps": [
+      { "place": "Domain registrar → Search domains", "action": "Buy the production domain with the owner account.", "value": "example.com", "expect": "The domain is listed under your domains with an expiry date and auto-renew on." },
+      { "place": "Domain registrar → DNS records", "action": "Add the records your hosting provider and mail provider list for this domain.", "expect": "Each record appears in the DNS records table." },
+      { "place": "Hosting provider → Project → Domains", "action": "Add the domain and wait for verification.", "expect": "The domain shows as verified with a valid certificate." }
+    ]
+  },
+  {
+    "id": "monitoring", "title": "Error monitoring", "when": "always", "minutes": 15,
+    "unblocks": "agents reading production errors without asking you for screenshots",
+    "verified": false,
+    "steps": [
+      { "place": "Error monitor → Projects → Create project", "action": "Create one project for this app and copy its DSN into the deploy environment.", "expect": "The project page shows a DSN and 'waiting for first event'." },
+      { "place": "Error monitor → Settings → API tokens", "action": "Create a token with read-only scopes for agents and store it as a secret, not in the repo.", "expect": "The token is listed with read-only scopes." }
+    ]
+  },
+  {
+    "id": "legal-minimum", "title": "Legal minimum for a pilot", "when": "always", "minutes": 60,
+    "unblocks": "inviting real people and collecting their data",
+    "verified": false,
+    "steps": [
+      { "place": "Repo → privacy page draft", "action": "Name the processors (hosting, database, AI provider, error monitor), the operator's identity and contact, and how long data is kept.", "expect": "The draft names every processor and a retention period." },
+      { "place": "Repo → privacy page draft", "action": "Describe a delete-my-data path that also removes the user's login, not only their rows.", "expect": "The page states how to request deletion and that the account is removed." },
+      { "place": "Production site → /privacy", "action": "Publish the page and link it from the sign-up screen.", "expect": "The page loads on the production domain and the sign-up screen links to it." }
+    ]
+  },
+  {
+    "id": "pilot-list", "title": "Pilot users and a definition of done", "when": "always", "minutes": 30,
+    "unblocks": "a pilot with real feedback instead of an open-ended beta",
+    "verified": false,
+    "steps": [
+      { "place": "Project notes → pilot list", "action": "List 5-10 named pilot users and how each one is contacted.", "expect": "Each name has a contact channel next to it." },
+      { "place": "Project notes → pilot list", "action": "Write what 'pilot done' means: who, which tasks, for how long.", "expect": "One paragraph states measurable exit criteria." }
+    ]
+  },
+  {
+    "id": "smtp", "title": "Custom SMTP for auth mail", "when": "email", "minutes": 30,
+    "unblocks": "invites and password resets to anyone outside the team",
+    "verified": false,
+    "steps": [
+      { "place": "Mail provider → Domains → Add domain", "action": "Add the sending domain and copy its DNS records into Domain registrar → DNS records.", "value": "mail.example.com", "expect": "The mail provider shows the domain as verified." },
+      { "place": "Mail provider → API keys or SMTP credentials", "action": "Create SMTP credentials for the auth service.", "expect": "A host, port, username and password are shown once; save them in your secret store." },
+      { "place": "Auth provider → Settings → SMTP", "action": "Enable custom SMTP with those credentials before the first real invite; the built-in mailer is rate-limited or team-only.", "value": "no-reply@mail.example.com", "expect": "A test invite to an address outside the team arrives within a minute." }
+    ]
+  },
+  {
+    "id": "oauth-consent", "title": "OAuth consent screen and verification", "when": "oauth", "minutes": 45,
+    "unblocks": "sign-in with the OAuth provider for pilot users who are not test users",
+    "verified": false,
+    "steps": [
+      { "place": "OAuth provider console → Consent screen", "action": "Create the consent screen in testing mode with the app name, support email, privacy URL and only the scopes you use.", "expect": "The consent screen shows publishing status 'Testing'." },
+      { "place": "OAuth provider console → Consent screen → Test users", "action": "Add every pilot user's email as a test user; testing-mode tokens expire in days, so plan re-consent.", "expect": "Each pilot email is listed under test users." },
+      { "place": "OAuth provider console → Consent screen → Publish / Submit for verification", "action": "Submit for verification early; review can take weeks for sensitive scopes.", "expect": "The status shows verification pending or in review." }
+    ]
+  },
+  {
+    "id": "payments-account", "title": "Payment provider business account", "when": "payments", "minutes": 45,
+    "unblocks": "taking real payments and live webhooks",
+    "verified": false,
+    "steps": [
+      { "place": "Payment provider → Sign up → Business account", "action": "Create the account with the owner email and the business's legal details.", "expect": "The dashboard opens in test mode." },
+      { "place": "Payment provider → Settings → Business verification", "action": "Submit identity and bank details now; verification can take days.", "expect": "The status shows verification submitted or pending review." }
+    ]
+  },
+  {
+    "id": "ai-key-cap", "title": "AI provider key with a monthly cap", "when": "ai", "minutes": 15,
+    "unblocks": "AI features in preview and production without unbounded spend",
+    "verified": false,
+    "steps": [
+      { "place": "AI provider → Billing → Usage limits", "action": "Set a hard monthly cap for the operator account, or record in docs/ARCHITECTURE.md that users bring their own key.", "value": "50 USD", "expect": "The hard limit is shown for the current month, or the bring-your-own-key decision is written down." },
+      { "place": "AI provider → API keys → Create key", "action": "Create an operator key scoped to this project and store it as a deploy secret, not in the repo.", "expect": "The key is listed with the project name and a last-used of 'never'." }
+    ]
+  },
+  {
+    "id": "vm-ingress", "title": "VM ingress: cloud rule and host firewall", "when": "vm", "minutes": 20,
+    "unblocks": "reaching the app on the VM from the internet",
+    "verified": false,
+    "steps": [
+      { "place": "Cloud console → Networking → Security list or security group for the VM", "action": "Add an ingress rule for the app port from the sources you need.", "value": "TCP 443 from 0.0.0.0/0", "expect": "The rule is listed under ingress rules." },
+      { "place": "VM shell → host firewall", "action": "Open the same port in the host firewall too; the cloud rule alone is not enough.", "value": "sudo ufw allow 443/tcp", "expect": "The firewall status lists 443/tcp as allowed." },
+      { "place": "VM shell → host firewall", "action": "Persist the host rule so it survives a reboot, then reboot once to check.", "expect": "After the reboot, https://example.com answers from outside the VM." }
+    ]
+  }
+]

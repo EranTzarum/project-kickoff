@@ -9,6 +9,7 @@ Advisory only: a MISSING line is a to-do, not a stop sign. `--strict` is for CI.
 |---|---|
 | Stage tracker | `docs/KICKOFF.md` |
 | Living state file | `STATE.md` |
+| Launch track (owner-only blockers) | `docs/LAUNCH.md` |
 
 ## Stage 1 — Domain
 | Deliverable | Path |
