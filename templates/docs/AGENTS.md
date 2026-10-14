@@ -41,7 +41,7 @@ A gate is only real if it passes in a clean worktree with no `.env`. Live-DB sui
 - Never merge to `main` without the owner's explicit instruction. Deliver a branch.
 
 ## Claude Code only
-This file is the only instruction file; Codex, Cursor and Claude Code all read it. Claude Code also runs hooks that enforce part of the rules above. Codex and Cursor do not run hooks, so for them these rules and the CI gates are the enforcement.
+This file is the only instruction file; Codex, Cursor and Claude Code all read it. Claude Code reads `AGENTS.md` natively from v2.1.277, and only while no `CLAUDE.md` exists in this folder or a parent; if an older version or a parent `CLAUDE.md` is in play, add a `CLAUDE.md` containing just `@AGENTS.md`. Claude Code also runs hooks that enforce part of the rules above. Codex and Cursor do not run hooks, so for them these rules and the CI gates are the enforcement.
 - `.claude/hooks/service-role-guard.js` warns when the service-role key appears outside the allowed directories.
 - `.claude/hooks/block-env-edit.js` blocks writes to a real `.env`; `block-destructive-sql.js` blocks raw destructive SQL from a shell; `migration-number-check.js` refuses a taken migration prefix.
 - Sub-agents `quality-gate` and `rls-auditor` live in `.claude/agents/`.
