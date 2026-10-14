@@ -9,7 +9,10 @@ const VAGUE = [
 ];
 const VAGUE_RE = new RegExp(VAGUE.join("|"), "i");
 const SECTION_HEADINGS = ["## What you need to do", "## מה אתה צריך לעשות"];
-const EXPECT_MARKERS = ["You should see", "Expected:", "תראה"];
+const EXPECT_MARKERS = ["You should see", "Expected:", "**מה תראה:**", "תראה"];
+// Every step uses the labelled format (L106). Hebrew receipts may use the Hebrew labels.
+const WHERE_LABELS = ["**Where:**", "**איפה:**"];
+const DO_LABELS = ["**Do:**", "**מה לעשות:**"];
 
 const nonEmpty = (v) => typeof v === "string" && v.trim() !== "";
 
@@ -102,19 +105,15 @@ export function lintMarkdown(text) {
     const expect = EXPECT_MARKERS.map((m) => after(text, m)).find((v) => v !== null);
     if (expect === undefined) errors.push(`step ${num}: missing expected result`);
     else if (!expect) errors.push(`step ${num}: empty expected result`);
-    if (text.includes("**Where:**") || text.includes("**Do:**")) {
-      // The labelled format (either label present): place and action must both be there and filled in.
-      const place = after(text, "**Where:**");
-      if (place === null) errors.push(`step ${num}: missing place`);
-      else if (!place) errors.push(`step ${num}: empty place`);
-      const action = after(text, "**Do:**");
-      if (action === null) errors.push(`step ${num}: missing action`);
-      else if (!action) errors.push(`step ${num}: empty action`);
-    } else {
-      // A prose step: its first line is the action, and it is not just the expected result.
-      const first = text.split("\n")[0].replace(/^\d+\.\s*/, "").trim();
-      if (!first || EXPECT_MARKERS.some((m) => first.replace(/^\*+/, "").startsWith(m))) errors.push(`step ${num}: missing action`);
-    }
+    // Strict: every step names its place and its action with a label, and both are filled in. A prose step
+    // ("1. Click Save.") cannot be checked for a place, so it is rejected.
+    const labelled = (labels) => labels.map((l) => after(text, l)).find((v) => v !== null);
+    const place = labelled(WHERE_LABELS);
+    if (place === undefined) errors.push(`step ${num}: missing place`);
+    else if (!place) errors.push(`step ${num}: empty place`);
+    const action = labelled(DO_LABELS);
+    if (action === undefined) errors.push(`step ${num}: missing action`);
+    else if (!action) errors.push(`step ${num}: empty action`);
     for (const line of text.split("\n")) {
       if (VAGUE_RE.test(line)) errors.push(`step ${num}: refers to an earlier message`);
     }

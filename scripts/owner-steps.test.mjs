@@ -148,7 +148,9 @@ test("lintMarkdown requires a filled place, action and expected result", () => {
   assert.ok(lintMarkdown(sec("1. **Do:** Click Save\n   **You should see:** Saved")).includes("step 1: missing place"));
   const emptyDo = lintMarkdown(sec("1. **Do:**\n   **You should see:** Saved"));
   assert.ok(emptyDo.includes("step 1: missing place") && emptyDo.includes("step 1: empty action"), emptyDo.join("; "));
-  assert.deepEqual(lintMarkdown(sec("1. Open the console and press Save.\n   You should see: a green check.")), []);
+  const prose = lintMarkdown(sec("1. Open the console and press Save.\n   You should see: a green check."));
+  assert.ok(prose.includes("step 1: missing place") && prose.includes("step 1: missing action"), "prose steps are rejected");
+  assert.deepEqual(lintMarkdown(`## מה אתה צריך לעשות\n\n1. **איפה:** לוח הבקרה\n   **מה לעשות:** לחץ על שמירה\n   **מה תראה:** סימן ירוק\n`), [], "Hebrew labels pass");
 });
 
 test("references/owner-steps.md documents exactly what the script accepts and prints", () => {

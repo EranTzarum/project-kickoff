@@ -42,6 +42,10 @@ Under `## What you need to do` (Hebrew projects: `## מה אתה צריך לעש
 
 `place`, `action` and `expect` are required. `value` (its own code block) and `irreversible` are optional.
 
+`--lint` is strict: every numbered step needs a filled-in **Where:** and **Do:** and an expected result; a step
+written as plain prose is rejected, because its place cannot be checked. Hebrew receipts may use **איפה:**,
+**מה לעשות:** and **מה תראה:** instead.
+
 ## Rules
 
 - One action per step.
