@@ -172,12 +172,27 @@ Exit checklist:
 Not a one-time stage. Print on `/project-kickoff feature <name>` with the feature name filled in.
 
 1. **Design / grill.** Acceptance criteria as invariants the owner can read, including visibility edge cases. — L9, L82
-2. **Ticket file** (`.tickets/<feature>-<n>.md`): id, READ FIRST, write scope (pre-authorising backward-compatible edits to shared components), off-limits, contract if split, verify command, severity flag. Workers never spawn workers. — ticket anatomy, L8, L71, L81, L99
-3. **Own worktree** via `scripts/worktree-setup.*`; tag `known-good-<date>` before a risky phase. — L62, L87
-4. **Build**, typecheck after each meaningful edit; guard empty list filters; no swallowed errors. — L86, L88
-5. **Gates** in the worktree: `node scripts/gates.mjs`. Re-run yourself if the worker's sandbox cannot. Tests are hermetic and never gated on a rate-limited external provider; a passing test is the spec until the owner says otherwise. — L60, L72, L85, L92, L95
-6. **Verify** with a different model family, given the original task + diff + criteria, never the worker's summary; trust the filesystem over any report. — L91, L98
-7. **Schema changed?** Runbook: additive → types regen → deploy → revoke; `rls-auditor`; anon-surface test; contract test for every new RPC. — L39, L67, L84
-8. **Data changed?** Spot-check N real records end to end; invariants, not counts; load-test fetch changes against the full dataset. — L83, L93, L94
-9. **Checkpoint**: check hard-refresh before treating a "missing" deployed feature as a bug (L96); push the branch for review, update `STATE.md` (done / in flight / next / mistakes), `vault-capture` any real decision. Never merge to main without instruction. — L69, L97
-10. **Budgets**: identical-ticket retries ≤ 2; token/turn cap on any open-ended mandate; checkpoint at ~70 % quota. — L89, L90, L69
+2. **Ticket file** (`.tickets/<feature>-<n>.md`): id, READ FIRST, write scope (pre-authorising backward-compatible edits to shared components), off-limits, contract if split, verify command, severity flag. Workers never spawn workers. Front matter first, then the brief:
+   ```
+   ---
+   id: 01-invoice-export
+   engine: codex
+   model: gpt-5
+   write_set: src/invoices, tests/invoices
+   accept: node --test tests/invoices
+   accept: node scripts/gates.mjs
+   blocked_by: 00-schema
+   ---
+   ## CONSTRAINTS
+   ...
+   ```
+   `accept` repeats, one command per line. The body keeps a `## CONSTRAINTS` section and stays under 8000 characters. — ticket anatomy, L8, L71, L81, L99, L107
+3. **Build route.** Run `node <skill>/scripts/build-route.mjs <root>`. If Crew is not installed, build in kickoff's loop and do not mention Crew. If it is, ask once per feature (kickoff's loop is the default) and record the answer with `build-route.mjs <root> --choose kickoff|crew`. Crew route: create a feature branch (never main), run `node <skill>/scripts/to-crew.mjs <root> --feature <name>`, then hand `crew.json` to Crew. Steps 6-7 (gates, cross-model verify) still apply to the merged branch. — L107, L91
+4. **Own worktree** via `scripts/worktree-setup.*`; tag `known-good-<date>` before a risky phase. — L62, L87
+5. **Build**, typecheck after each meaningful edit; guard empty list filters; no swallowed errors. — L86, L88
+6. **Gates** in the worktree: `node scripts/gates.mjs`. Re-run yourself if the worker's sandbox cannot. Tests are hermetic and never gated on a rate-limited external provider; a passing test is the spec until the owner says otherwise. — L60, L72, L85, L92, L95
+7. **Verify** with a different model family, given the original task + diff + criteria, never the worker's summary; trust the filesystem over any report. — L91, L98
+8. **Schema changed?** Runbook: additive → types regen → deploy → revoke; `rls-auditor`; anon-surface test; contract test for every new RPC. — L39, L67, L84
+9. **Data changed?** Spot-check N real records end to end; invariants, not counts; load-test fetch changes against the full dataset. — L83, L93, L94
+10. **Checkpoint**: check hard-refresh before treating a "missing" deployed feature as a bug (L96); push the branch for review, update `STATE.md` (done / in flight / next / mistakes), `vault-capture` any real decision. Never merge to main without instruction. — L69, L97
+11. **Budgets**: identical-ticket retries ≤ 2; token/turn cap on any open-ended mandate; checkpoint at ~70 % quota. — L89, L90, L69

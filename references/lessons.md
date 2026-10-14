@@ -147,6 +147,7 @@ Format: `| id | date | category | what happened | evidence | rule | stage |`
 | L97 | 2026-08-09 | process | The owner repeatedly had to ask "commit and push so I can review" | Cursor prompts 08-09 | Push a review checkpoint at the end of every implemented phase; never merge to main without instruction | build-loop |
 | L98 | 2026-08-02 | testing | Verifiers reported files deleted that lived in a gitignored dir, and a git repo that was an empty shell | vault Cross-model verification | Trust the filesystem over any report, including a verifier's; run the one command yourself | build-loop |
 | L99 | 2026-07-31 | orchestration | Two waves both needed the shared i18n dictionary and had to be serialised | claude-mem 07-31 | Identify shared-file touchpoints (i18n, generated types, config, lockfiles) before parallelising | build-loop |
+| L107 | 2026-10-14 | orchestration | Kickoff tickets and the Crew DAG carried the same fields (id, write scope, verify command, blocked by), yet each Crew run copied them by hand, and the generated DAG once named main as its base branch | project-kickoff P2-P4 runs 2026-10-14 | One ticket format with front matter; the owner picks the build route once per feature; a script exports the tickets to crew.json with the gates as validate and a feature branch as base | build-loop |
 
 ## Ticket-brief anatomy (from the tickets that worked)
 
