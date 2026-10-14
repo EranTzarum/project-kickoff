@@ -136,6 +136,20 @@ test("measure: stage days, pilot, owner actions, gate pass rate; missing data is
   assert.equal(empty.gate_pass_rate, null);
 });
 
+test("measure: build_routes counts valid rows; invalid route ignored", () => {
+  const at = (d) => new Date(Date.UTC(2026, 0, 1) + d * 86400000).toISOString();
+  const rows = [
+    { v: 1, ts: at(0), project_id: "abc", event: "build_route", route: "kickoff" },
+    { v: 1, ts: at(1), project_id: "abc", event: "build_route", route: "kickoff" },
+    { v: 1, ts: at(2), project_id: "abc", event: "build_route", route: "crew" },
+    { v: 1, ts: at(3), project_id: "abc", event: "build_route", route: "other" },
+  ];
+  const m = measure(rows);
+  assert.deepEqual(m.build_routes, { kickoff: 2, crew: 1 });
+  assert.equal(m.rows_ignored, 1);
+  assert.deepEqual(measure([]).build_routes, { kickoff: 0, crew: 0 });
+});
+
 test("measure CLI: no ledger says so; a ledger prints the summary", () => {
   const dir = mkdtempSync(join(tmpdir(), "measure-"));
   assert.match(run("measure.mjs", [dir]).stdout, /No ledger yet/);
