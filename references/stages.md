@@ -25,7 +25,7 @@ Exit checklist:
 - [ ] Tracker and STATE.md exist; STATE.md has a "mistakes already made" section — L69, L70
 - [ ] Tooling bring-up listed as owner actions: CLI auth (gh, hosting, DB), shell stated, toolchain (jq/rg) — L4, L5
 - [ ] Paid tools' quota/billing model recorded once — L7
-- [ ] Division of labor written in CLAUDE.md §Workspace — L6, L91
+- [ ] Division of labor written in AGENTS.md §Workspace — L6, L91
 
 ---
 
@@ -140,7 +140,7 @@ Questionnaire (one call):
 3. Worker platforms in use (Claude, Codex, Cursor) and which can run npm. — L72, L73
 4. Line endings (CRLF/LF) and shell for command blocks. *(default: CRLF on Windows, PowerShell + Git Bash)* — L5
 
-Deliverables: `CLAUDE.md` (+ `AGENTS.md` copy for Codex/Cursor), `.claude/settings.json`, four hooks, two agents, `scripts/gates.mjs`, `scripts/worktree-setup.ps1|.sh`, `.github/workflows/gates.yml` (+ `keepalive.yml` on free tier).
+Deliverables: `AGENTS.md` (the only instruction file; Claude-only rules in a section inside it), `.claude/settings.json`, four hooks, two agents, `scripts/gates.mjs`, `scripts/worktree-setup.ps1|.sh`, `.github/workflows/gates.yml` (+ `keepalive.yml` on free tier).
 
 Exit checklist:
 - [ ] Every gate passes in a clean worktree with no `.env` — L60, L61
@@ -151,7 +151,8 @@ Exit checklist:
 - [ ] One living STATE.md; other status docs superseded; rule docs updated with the feature — L68, L69
 - [ ] Workers read tickets from files; absolute cwd; stdin closed — L71
 - [ ] Model-per-role policy fixed — L74; plugin overhead audited — L75; dead branches deleted or tagged — L77
-- [ ] Standing research rules (code graph first) in CLAUDE.md — L76
+- [ ] One instruction file, `AGENTS.md`; no `CLAUDE.md` rendered. Graphify, the standard doc set and the always-on tool checks are `/ready`'s job, not stage 5 — L76, L100
+- [ ] The stage 5 receipt lists the loading check as an owner action (Claude Code v2.1.277 or newer, no `CLAUDE.md` in the project or a parent; else a `CLAUDE.md` containing only `@AGENTS.md`, or an `@AGENTS.md` line added to an existing one) and ends with one line: run `/ready` — L100
 - [ ] RTL lint rule and shared primitives, if RTL — L79
 - [ ] Design tokens approved by the owner before UI waves — L80
 - [ ] Tickets reference a shared context file, seats tracked — L81

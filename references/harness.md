@@ -13,13 +13,13 @@
 | `scripts/db-types.mjs` | node script | stale generated types | L39, L40 |
 | `.github/workflows/gates.yml` | CI | "works on my checkout"; deploy from working tree | L60, L64 |
 | `.github/workflows/keepalive.yml` | CI (free tier only) | DB auto-pause; cron `*/2` trap; empty secrets | L48 |
-| `CLAUDE.md` (+ `AGENTS.md` copy) | rules | everything above as prose rules for Codex/Cursor which do not run Claude hooks | — |
+| `AGENTS.md` (the only instruction file) | rules | everything above as prose rules for Codex/Cursor which do not run Claude hooks; Claude-only rules sit in a section inside it | L100 |
 
-Codex and Cursor do not execute Claude Code hooks. For them the same rules live in `CLAUDE.md`/`AGENTS.md`
+Codex and Cursor do not execute Claude Code hooks. For them the same rules live in `AGENTS.md`
 and the CI workflow is the enforcement. The rls-auditor agent needs the Supabase MCP; without it, run the
 three SQL queries in its procedure by hand.
 
 Gaps the CRM never closed and these templates now do: migration collisions (hook), type regeneration
-(script + runbook + quality-gate check), broad staging while a worker runs (CLAUDE.md rule + quality-gate
+(script + runbook + quality-gate check), broad staging while a worker runs (AGENTS.md rule + quality-gate
 hygiene), migration-applied-before-deploy (runbook + STATE.md table). Preview isolation stays a dashboard
 rule in ENV_MATRIX; no local check can see the hosting platform's env scopes.

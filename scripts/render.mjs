@@ -24,8 +24,7 @@ const STAGE_FILES = {
   ],
   4: [["docs/ENV_MATRIX.md", "docs/ENV_MATRIX.md"], ["env/.env.example", ".env.example"]],
   5: [
-    ["docs/CLAUDE.md", "CLAUDE.md"],
-    ["docs/CLAUDE.md", "AGENTS.md"],
+    ["docs/AGENTS.md", "AGENTS.md"],
     ["claude/settings.json", ".claude/settings.json"],
     ["claude/hooks/_shell.js", ".claude/hooks/_shell.js"],
     ["claude/hooks/package.json", ".claude/hooks/package.json"],

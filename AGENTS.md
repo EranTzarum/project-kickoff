@@ -7,7 +7,7 @@ User-facing docs: `README.md`. Agent instructions: `SKILL.md`.
 ## Layout
 
 - `SKILL.md`: modes, rules, stage loop.
-- `references/`: `stages.md` (questionnaire, deliverables, exit checklist per stage), `lessons.md` (99 lessons), `harness.md`, `stack-profiles/`.
+- `references/`: `stages.md` (questionnaire, deliverables, exit checklist per stage), `lessons.md` (100 lessons), `harness.md`, `stack-profiles/`.
 - `templates/`: files rendered into a project; `PLACEHOLDERS.md` lists every placeholder.
 - `scripts/render.mjs` (answers → files, skips existing), `scripts/preflight.mjs` (advisory checker), `scripts/preflight.test.mjs`, `scripts/hooks.test.mjs`, `scripts/render.test.mjs`.
 

@@ -1,6 +1,6 @@
 # Architecture — {{PROJECT_NAME}}
 
-Stack profile: `{{STACK_PROFILE}}`. Rules live in `CLAUDE.md`; this file holds the model and the why.
+Stack profile: `{{STACK_PROFILE}}`. Rules live in `AGENTS.md`; this file holds the model and the why.
 
 ## 1. Tenancy
 - Tenant root table: `{{TENANT_TABLE}}`. Every tenant table carries `{{TENANT_KEY}}` and has RLS scoped to the `{{JWT_CLAIM}}` JWT claim.
