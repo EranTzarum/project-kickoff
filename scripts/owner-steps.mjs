@@ -93,9 +93,25 @@ export function lintMarkdown(text) {
   const steps = parseMarkdownSteps(section);
   const errors = [];
   if (steps.length === 0) errors.push("no numbered steps in section");
+  const after = (text, label) => {
+    const i = text.indexOf(label);
+    return i === -1 ? null : text.slice(i + label.length).split("\n")[0].replace(/^[\s*:]+/, "").trim();
+  };
   for (const { num, text } of steps) {
-    if (!EXPECT_MARKERS.some((m) => text.includes(m))) {
-      errors.push(`step ${num}: missing expected result`);
+    // An expected result is a marker followed by text on the same line.
+    const expect = EXPECT_MARKERS.map((m) => after(text, m)).find((v) => v !== null);
+    if (expect === undefined) errors.push(`step ${num}: missing expected result`);
+    else if (!expect) errors.push(`step ${num}: empty expected result`);
+    if (text.includes("**Where:**")) {
+      // The labelled format: place and action must both be filled in.
+      if (!after(text, "**Where:**")) errors.push(`step ${num}: empty place`);
+      const action = after(text, "**Do:**");
+      if (action === null) errors.push(`step ${num}: missing action`);
+      else if (!action) errors.push(`step ${num}: empty action`);
+    } else {
+      // A prose step: its first line is the action, and it is not just the expected result.
+      const first = text.split("\n")[0].replace(/^\d+\.\s*/, "").trim();
+      if (!first || EXPECT_MARKERS.some((m) => first.replace(/^\*+/, "").startsWith(m))) errors.push(`step ${num}: missing action`);
     }
     for (const line of text.split("\n")) {
       if (VAGUE_RE.test(line)) errors.push(`step ${num}: refers to an earlier message`);

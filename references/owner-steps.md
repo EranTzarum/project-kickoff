@@ -6,32 +6,41 @@ format and stand alone.
 
 ## Format
 
-Under `## What you need to do` (Hebrew projects: `## מה אתה צריך לעשות`), numbered steps:
+Under `## What you need to do` (Hebrew projects: `## מה אתה צריך לעשות`), numbered steps. This is exactly what
+`scripts/owner-steps.mjs` prints for the JSON below (a test keeps the two in step):
 
 ````markdown
 ## What you need to do
 
-1. Create the business account.
-   - **Where:** the hosting provider's sign-up page, "Create account".
-   - **Do:** sign up with the business email and save the backup codes.
-   - Value to type:
-     ```
-     billing@example.com
-     ```
-   - **You should see:** the dashboard with an empty project list.
-   - **Can't be undone.** The account email cannot be changed later.
+1. **Where:** Hosting provider → Sign up
+   **Do:** Create the account with the business email.
+   ```
+   ops (at) your-domain
+   ```
+   **You should see:** The dashboard opens with an empty project list.
+2. **Where:** Domain registrar → Search domains
+   **Do:** Buy the production domain.
+   ```
+   your-domain.com
+   ```
+   **You should see:** The domain is listed with an expiry date.
+   **Can't be undone.**
 ````
 
 ## JSON schema
 
-`scripts/owner-steps.mjs` renders this from a JSON array:
+`node <skill>/scripts/owner-steps.mjs <steps.json>` renders a JSON array of steps (or `{ "steps": [...] }`):
 
 ```json
-[{ "title": "Create the business account", "where": "…", "do": "…",
-   "value": "optional text for its own code block", "see": "…", "irreversible": true }]
+[
+  { "place": "Hosting provider → Sign up", "action": "Create the account with the business email.",
+    "value": "ops (at) your-domain", "expect": "The dashboard opens with an empty project list." },
+  { "place": "Domain registrar → Search domains", "action": "Buy the production domain.",
+    "value": "your-domain.com", "expect": "The domain is listed with an expiry date.", "irreversible": true }
+]
 ```
 
-`where`, `do` and `see` are required. `value` and `irreversible` are optional.
+`place`, `action` and `expect` are required. `value` (its own code block) and `irreversible` are optional.
 
 ## Rules
 

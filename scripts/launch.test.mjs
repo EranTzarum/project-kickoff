@@ -89,3 +89,22 @@ test("the catalog holds no email addresses (the public repo's leak check rejects
   const raw = readFileSync(join(here, "../templates/launch/items.json"), "utf8");
   assert.doesNotMatch(raw, /[\w.+-]+@[\w-]+\.[\w.]+/);
 });
+
+test("answers from a later stage add launch items to an existing LAUNCH.md and keep the owner's ticks", () => {
+  const dir = mkdtempSync(join(tmpdir(), "launch-later-"));
+  const example = JSON.parse(readFileSync(join(here, "../templates/answers.example.json"), "utf8"));
+  const write = (a) => { const f = join(dir, "answers.json"); writeFileSync(f, JSON.stringify(a)); return f; };
+  const out = join(dir, "out");
+  const render = (a, ...extra) => spawnSync(process.execPath, [join(here, "render.mjs"), out, write(a), ...extra], { encoding: "utf8" });
+  render({ ...example, oauthProviders: ["none"] }, "--stage", "0");
+  const launch = join(out, "docs/LAUNCH.md");
+  assert.doesNotMatch(readFileSync(launch, "utf8"), /`oauth-consent`/);
+  writeFileSync(launch, readFileSync(launch, "utf8").replace("## [ ] ", "## [x] "));
+  const r = render({ ...example, oauthProviders: ["google"] }, "--stage", "4");
+  assert.match(r.stdout, /update docs\/LAUNCH\.md \(\+oauth-consent\)/);
+  const after = readFileSync(launch, "utf8");
+  assert.match(after, /`oauth-consent`/);
+  assert.match(after, /^## \[x\] /m, "the owner's tick survives");
+  assert.equal((after.match(/`owner-account`/g) || []).length, 1, "no item is added twice");
+  rmSync(dir, { recursive: true, force: true });
+});

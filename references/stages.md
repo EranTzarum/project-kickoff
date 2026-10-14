@@ -18,6 +18,7 @@ Questionnaire (one call):
 Second call only if needed:
 5. Who codes: orchestrator plans + workers implement *(default)*, or single agent end to end? Which worker sandboxes can run npm/tests? — L6, L72
 6. What "v1 done" means, in one sentence the owner would sign.
+7. Launch track: does v1 send email to people outside the team, use OAuth sign-in, take payments, call an AI provider, or deploy to a VM? (answers `smtpProvider`, `oauthProviders`, `payments`, `aiProvider`, `deployTarget`; they pick the `docs/LAUNCH.md` items, and a later stage's answers add items to it) — L105
 
 Deliverables: `docs/KICKOFF.md` (tracker), `STATE.md`, `docs/LAUNCH.md` (launch track), and optionally a notes-vault `Projects/<name>/Overview.md` via `vault-capture` (Claude Code, when installed).
 

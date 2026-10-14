@@ -1,7 +1,7 @@
 // node --test scripts/owner-steps.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -68,6 +68,7 @@ test("lintMarkdown accepts good sections and rejects common failures", () => {
   const he = `## מה אתה צריך לעשות
 
 1. **Where:** Console
+   **Do:** לחץ על שמירה
    **You should see:** תראה success
 `;
   assert.deepEqual(lintMarkdown(he), []);
@@ -104,6 +105,7 @@ test("CLI: JSON to markdown, validation exit 1, lint good and bad files", () => 
     `## What you need to do
 
 1. **Where:** X
+   **Do:** Z
    **You should see:** Y
 `,
   );
@@ -134,4 +136,24 @@ test("a multi-line value stays inside its code block, and a value holding ``` ge
   assert.match(md, /   ```\n   line one\n   line two\n   ```/);
   const fenced = formatSteps([{ place: "Docs", action: "Paste", value: "```js\nx\n```", expect: "Pasted" }]);
   assert.match(fenced, /   ````\n   ```js\n   x\n   ```\n   ````/);
+});
+
+test("lintMarkdown requires a filled place, action and expected result", () => {
+  const sec = (body) => `## What you need to do\n\n${body}\n`;
+  assert.ok(lintMarkdown(sec("1. **You should see:** Saved")).includes("step 1: missing action"));
+  assert.ok(lintMarkdown(sec("1. **Where:** Console\n   **You should see:** Saved")).includes("step 1: missing action"));
+  assert.ok(lintMarkdown(sec("1. **Where:** Console\n   **Do:**\n   **You should see:** Saved")).includes("step 1: empty action"));
+  assert.ok(lintMarkdown(sec("1. **Where:**\n   **Do:** Save\n   **You should see:** Saved")).includes("step 1: empty place"));
+  assert.ok(lintMarkdown(sec("1. **Where:** Console\n   **Do:** Save\n   **You should see:**")).includes("step 1: empty expected result"));
+  assert.deepEqual(lintMarkdown(sec("1. Open the console and press Save.\n   You should see: a green check.")), []);
+});
+
+test("references/owner-steps.md documents exactly what the script accepts and prints", () => {
+  const doc = readFileSync(join(here, "../references/owner-steps.md"), "utf8").replace(/\r\n/g, "\n");
+  const json = doc.match(/```json\n([\s\S]*?)\n```/)[1];
+  const shown = doc.match(/````markdown\n([\s\S]*?)````/)[1];
+  const steps = JSON.parse(json);
+  assert.deepEqual(validateSteps(steps), []);
+  assert.equal(formatSteps(steps), shown);
+  assert.deepEqual(lintMarkdown(shown), []);
 });

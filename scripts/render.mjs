@@ -5,7 +5,7 @@
 // composite placeholders (env rows, JS arrays, SQL lists), and refuses to overwrite an
 // existing file unless --force. Prints one line per file. No dependencies.
 // Logs one `render` (or `regenerate` with --force) event per stage to .kickoff/HISTORY.jsonl.
-import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync, appendFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { logEvent } from "./log.mjs";
@@ -89,15 +89,15 @@ const launchWhen = {
   ai: set(a.aiProvider),
   vm: a.deployTarget === "vm",
 };
-const launchItems = JSON.parse(readFileSync(join(T, "launch/items.json"), "utf8"))
+const launchBlocks = JSON.parse(readFileSync(join(T, "launch/items.json"), "utf8"))
   .filter((i) => launchWhen[i.when])
-  .map((i) => [
+  .map((i) => [i.id, [
     `## [ ] ${i.title} (\`${i.id}\`, ~${i.minutes} min)`, "",
     `Unblocks: ${i.unblocks}`, "",
     ...(i.verified ? [] : ["_Click paths not yet verified against the provider's current UI; check its docs if a menu differs._", ""]),
     formatSteps(i.steps, { heading: null }),
-  ].join("\n"))
-  .join("\n");
+  ].join("\n")]);
+const launchItems = launchBlocks.map(([, text]) => text).join("\n");
 const derived = {
   LAUNCH_ITEMS: launchItems.trimEnd(),
   ENV_TIERS: tiers
@@ -197,5 +197,16 @@ if (onlyStage === null || onlyStage === 5) {
 if (a.freeTier && (onlyStage === null || onlyStage === 5)) {
   const dst = join(root, ".github/workflows/keepalive.yml");
   if (!existsSync(dst) || force) { mkdirSync(dirname(dst), { recursive: true }); writeOut(dst, dst, render(readFileSync(join(T, "ci/keepalive.yml"), "utf8"))); console.log("write  .github/workflows/keepalive.yml"); written++; }
+}
+// Launch items depend on answers that arrive in later stages (OAuth in stage 4, a VM deploy in stage 5). When
+// docs/LAUNCH.md already exists, newly selected items are appended; existing (possibly ticked) items are untouched.
+const launchPath = join(root, "docs/LAUNCH.md");
+if (existsSync(launchPath) && !adoptMapped["docs/LAUNCH.md"] && !adoptExcluded.includes("docs/LAUNCH.md")) {
+  const current = readFileSync(launchPath, "utf8");
+  const missing = launchBlocks.filter(([id]) => !current.includes(`(\`${id}\``));
+  if (missing.length) {
+    appendFileSync(launchPath, `\n${missing.map(([, text]) => text).join("\n")}`);
+    console.log(`update docs/LAUNCH.md (+${missing.map(([id]) => id).join(", ")})`);
+  }
 }
 console.log(`\n${written} written, ${skipped} skipped`);
