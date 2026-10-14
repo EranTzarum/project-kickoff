@@ -42,7 +42,10 @@ pr-gate, merge only on the owner's `merge`.
 5. **P5 Build alone or with Crew** — stage 6 builds here, or exports `crew.json` when the Factory is installed.
 6. **P6 Learn across projects** — lesson `source` + `class` columns, `retro` mode, a user-level lesson store,
    community lessons by PR; a rule needs 2+ projects.
-7. **P7 Opt-in telemetry + profiles** — kickoff's own backend (off by default, show before send, numbers only);
+7. **P7 Opt-in telemetry + profiles** — known limit from P2: the generated CI installs Python dependencies
+   with `pip install -r requirements.txt` or `pip install -e ".[dev]"`; a Poetry/uv/PDM dev group is not
+   installed, so a `python -m pytest` gate fails there. The Python profile must pick the dependency manager.
+   Then: — kickoff's own backend (off by default, show before send, numbers only);
    `python-fastapi-nextjs` and `single-vm-caddy` profiles; README speed promise only after measured ledgers.
 
 **Hook design (issue #2).** The Bash guards are an allowlist, not a shell parser: protected text (destructive

@@ -77,7 +77,7 @@ test("CI installs dependencies by what the repo uses, never an unconditional npm
   assert.doesNotMatch(ci, /cache: npm/, "npm cache needs a package-lock.json");
   assert.match(ci, /pnpm-lock\.yaml/);
   assert.match(ci, /yarn\.lock/);
-  assert.match(ci, /actions\/setup-python@v5\n\s+if: hashFiles\('requirements\.txt', 'pyproject\.toml'\) != ''/);
+  assert.match(ci, /actions\/setup-python@v5\r?\n\s+if: hashFiles\('requirements\.txt', 'pyproject\.toml'\) != ''/);
   assert.match(ci, /pip install -r requirements\.txt/);
   rmSync(dir, { recursive: true, force: true });
 });
