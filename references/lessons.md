@@ -92,6 +92,7 @@ Format: `| id | date | category | what happened | evidence | rule | stage |`
 | L57 | 2026-09-15 | deploy | Six empty redeploy commits for Preview env changes, plus one because the platform rejects a bot git author | c10ec75…6e0a4b6, 7b96e40 | Set the env matrix and a valid bot git author before the first deploy | auth-env |
 | L58 | 2026-07-30 | env | A local settings file granting elevated MCP permissions was not gitignored | claude-mem 07-30 | Gitignore local permission/settings files before granting anything through them | auth-env |
 | L59 | 2026-07-13 | deploy | Local TypeScript target was above the hosting runtime's; three narrowing fixes after deploy | 2295c71, dba2914, 05f8a7a | Match tsconfig target to the hosting runtime and build in CI before the first deploy | auth-env |
+| L103 | 2026-10-14 | env | A beta with real users ran on the database the team called "test"; other tiers still treated it as disposable, so it silently became live data. Dev / Preview / Prod columns could not express a separate beta tier | field run 2026-10-13/14 | Environments are a list of tiers (host, branch, database, API origin, redirects, real users, disposable); the database that holds real users is production-grade and never shared with a disposable tier | auth-env |
 
 ## Workspace and harness (stage 5)
 
@@ -120,6 +121,7 @@ Format: `| id | date | category | what happened | evidence | rule | stage |`
 | L80 | 2026-08-04 | ui | The design-token system was committed and reverted the same day; three redesign mockups all rejected | 6687f26 → 1d6e2b4, vault 2026-08-04 | Approve design tokens/primitives with the owner before UI waves; do not run design passes unattended | workspace |
 | L81 | 2026-08-10 | orchestration | Four parallel tickets each re-pasted the full plan; two seats were dispatched twice | Codex 08-10 | Tickets reference one shared context file; per-seat completion is tracked before redispatch | workspace |
 | L100 | 2026-10-11 | docs | The skill rendered CLAUDE.md plus an identical AGENTS.md copy into every project: two files to keep in step, and the copy is what Codex and Cursor actually read | issue #3, owner decision 2026-10-11 | One instruction file, AGENTS.md (Claude Code reads it natively from v2.1.277 when no CLAUDE.md exists in the folder or a parent; otherwise a one-line `CLAUDE.md` with `@AGENTS.md`, or that line added to an existing `CLAUDE.md`); Claude-only rules go in a section inside it; graphify and the tool checks belong to `/ready`, not to stage 5 | workspace |
+| L104 | 2026-10-14 | workspace | On a Windows checkout with core.autocrlf=true, the checkout and git archive both produced CRLF, and every shell script failed on the Linux VM ("set: pipefail: invalid option") | field run 2026-10-13/14 | Render a .gitattributes that pins scripts, CI, Caddyfile and Dockerfile to LF; the checker flags any CRLF shell script | workspace |
 
 ## Build loop (stage 6, per feature)
 
