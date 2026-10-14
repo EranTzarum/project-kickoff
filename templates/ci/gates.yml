@@ -13,11 +13,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Node is always needed: gates.mjs and preflight.mjs are Node scripts.
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci --no-audit --no-fund
+      # Dependencies are installed by whatever the repo actually uses (an adopted repo may not use npm).
+      # ponytail: lockfile detection only; a stack profile can pin exact setup steps when it needs more.
+      - name: Install JS dependencies (by lockfile)
+        if: hashFiles('package.json') != ''
+        run: |
+          if [ -f pnpm-lock.yaml ]; then corepack enable && pnpm install --frozen-lockfile
+          elif [ -f yarn.lock ]; then corepack enable && (yarn install --immutable || yarn install --frozen-lockfile)
+          elif [ -f package-lock.json ]; then npm ci --no-audit --no-fund
+          else npm install --no-audit --no-fund; fi
+      - uses: actions/setup-python@v5
+        if: hashFiles('requirements.txt', 'pyproject.toml') != ''
+        with:
+          python-version: "3.12"
+      - name: Install Python dependencies
+        if: hashFiles('requirements.txt', 'pyproject.toml') != ''
+        run: |
+          if [ -f requirements.txt ]; then pip install -r requirements.txt
+          else pip install -e ".[dev]" || pip install -e .; fi
       - name: Run gates from docs/KICKOFF.md
         run: node scripts/gates.mjs
       - name: Kickoff checklist (advisory)

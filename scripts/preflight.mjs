@@ -17,7 +17,17 @@ const read = (p) => readFileSync(join(root, p), "utf8").replace(/\r\n/g, "\n");
 
 const kickoff = join(root, "docs/KICKOFF.md");
 if (!existsSync(kickoff)) {
-  console.log("STAGE 0 INTAKE: MISSING — docs/KICKOFF.md (run /project-kickoff to generate it)");
+  const markers = [
+    "package.json", "pyproject.toml", "requirements.txt", "go.mod", "Cargo.toml",
+    "composer.json", "Gemfile", "pom.xml", "build.gradle", "manifest.json",
+  ];
+  const found = markers.find((m) => existsSync(join(root, m)))
+    ?? (existsSync(join(root, "src")) ? "src/" : existsSync(join(root, "app")) ? "app/" : null);
+  if (found) {
+    console.log(`STAGE 0 INTAKE: MISSING — docs/KICKOFF.md (existing project detected: ${found}; run /project-kickoff adopt)`);
+  } else {
+    console.log("STAGE 0 INTAKE: MISSING — docs/KICKOFF.md (run /project-kickoff to generate it)");
+  }
   process.exit(strict ? 1 : 0);
 }
 
@@ -63,11 +73,16 @@ if (strict) {
 }
 
 // ---- cross-check: env keys ----
-if (existsSync(join(root, ".env.example")) && existsSync(join(root, "docs/ENV_MATRIX.md"))) {
-  const exampleKeys = new Set(read(".env.example").split("\n").map((l) => l.match(/^([A-Z][A-Z0-9_]*)=/)?.[1]).filter(Boolean));
-  const matrixKeys = new Set([...read("docs/ENV_MATRIX.md").matchAll(/^\|\s*([A-Z][A-Z0-9_]*)\s*\|/gm)].map((m) => m[1]).filter((k) => k !== "KEY"));
-  for (const k of exampleKeys) if (!matrixKeys.has(k)) { problems++; console.log(`CHECK env: .env.example key ${k} not in docs/ENV_MATRIX.md`); }
-  for (const k of matrixKeys) if (!exampleKeys.has(k)) { problems++; console.log(`CHECK env: docs/ENV_MATRIX.md key ${k} not in .env.example`); }
+// An adopted repo may keep these under other names (.kickoff/adopt.json -> mapped); check the real files.
+let adoptMap = {};
+try { adoptMap = JSON.parse(read(".kickoff/adopt.json")).mapped ?? {}; } catch { adoptMap = {}; }
+const envExample = typeof adoptMap[".env.example"] === "string" ? adoptMap[".env.example"] : ".env.example";
+const envMatrix = typeof adoptMap["docs/ENV_MATRIX.md"] === "string" ? adoptMap["docs/ENV_MATRIX.md"] : "docs/ENV_MATRIX.md";
+if (existsSync(join(root, envExample)) && existsSync(join(root, envMatrix))) {
+  const exampleKeys = new Set(read(envExample).split("\n").map((l) => l.match(/^([A-Z][A-Z0-9_]*)=/)?.[1]).filter(Boolean));
+  const matrixKeys = new Set([...read(envMatrix).matchAll(/^\|\s*([A-Z][A-Z0-9_]*)\s*\|/gm)].map((m) => m[1]).filter((k) => k !== "KEY"));
+  for (const k of exampleKeys) if (!matrixKeys.has(k)) { problems++; console.log(`CHECK env: ${envExample} key ${k} not in ${envMatrix}`); }
+  for (const k of matrixKeys) if (!exampleKeys.has(k)) { problems++; console.log(`CHECK env: ${envMatrix} key ${k} not in ${envExample}`); }
 }
 
 // ---- cross-check: migrations ----

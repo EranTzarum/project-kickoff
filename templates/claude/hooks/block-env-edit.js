@@ -10,7 +10,7 @@ let input = "";
 process.stdin.on("data", (chunk) => (input += chunk));
 process.stdin.on("end", () => {
   const { tool_input } = JSON.parse(input || "{}");
-  const isEnv = (p) => /(^|\/)\.env(\.[\w.-]+)?$/.test(p) && !p.endsWith(".env.example");
+  const isEnv = (p) => /(^|\/)\.env(\.[\w.-]+)?$/.test(p) && !/\.env\.(example|sample|template|dist)$/.test(p);
   const path = (tool_input?.file_path ?? "").replaceAll("\\", "/");
   const command = (tool_input?.command ?? "").replaceAll("\\", "/");
 

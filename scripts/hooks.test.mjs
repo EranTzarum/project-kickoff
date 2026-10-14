@@ -72,9 +72,10 @@ test("env: any non-read-only command that names a real .env, and redirects to on
 test("env: reads and .env.example pass", () => {
   all("block-env-edit.js", [
     "cat .env", "grep K .env", "head -n1 .env | wc -l", "cat .env 2>&1", "rg K .env", "cat .envrc",
-    "echo K= >> .env.example", "cp .env.example docs/env.txt", "npm test 2>&1", "git status",
+    "echo K= >> .env.example", "cp .env.example docs/env.txt", "echo K= >> .env.sample", "cp .env.template .env.dist", "npm test 2>&1", "git status",
   ], 0);
   assert.equal(exitOf("block-env-edit.js", { file_path: ".env.example" }), 0);
+  for (const f of [".env.sample", "apps/web/.env.template", ".env.dist"]) assert.equal(exitOf("block-env-edit.js", { file_path: f }), 0, f);
 });
 
 test("migrations: shell writes to a taken prefix are blocked; fresh prefix, existing file and reads pass", () => {

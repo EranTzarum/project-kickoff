@@ -22,6 +22,7 @@ follow depend on the event:
 | `gate_run` | the project's `scripts/gates.mjs` | `passed`, `failed` |
 | `owner_action_open` / `owner_action_done` | the agent | `id` (same id for both), optional `note` |
 | `blocker` | the agent, when work stops on the owner | optional `id`, `note` |
+| `adopt` | `adopt.mjs --write` | `mapped`, `gaps` |
 | `pilot` | the agent, when the first real user signs in | — |
 
 Log by hand: `node <skill>/scripts/log.mjs <project-root> <event> [--stage N] [--id X] [--note "..."]`.

@@ -13,13 +13,14 @@ Base directory of this skill: the folder holding this file. Templates are in `te
 
 - `/project-kickoff` or "kickoff" — run the stages in order, starting from the first stage whose deliverables are missing.
 - `/project-kickoff status` — run the checker only, print the stage table, change nothing.
+- `/project-kickoff adopt` — for a repo that already exists. Run `node <skill>/scripts/adopt.mjs <project-root>`, show the report, ask once (one batched question) whether to write the manifest, then run it again with `--write`. Continue with the normal stage loop: stages whose deliverables are mapped or present are skipped by the checker; the rest are rendered, and `render.mjs` never writes over a mapped document. Present the gap report high-risk first, as owner actions where the owner must act. Details: `references/adopt.md` (L102).
 - `/project-kickoff stage <n>` — re-run one stage's questionnaire and regenerate its deliverables.
 - `/project-kickoff feature <name>` — print the build-loop checklist (stage 6) filled in for one feature.
 - `/project-kickoff measure` — run `node <skill>/scripts/measure.mjs <project-root>` and print the metrics (stage days, owner-action age, gate pass rate, idea to pilot). Change nothing.
 
 ## Rules (all modes)
 
-1. **Read `references/stages.md` first**, then the stack profile the user picks (`references/stack-profiles/*.md`). Do not improvise questions; the stage file holds them.
+1. **Read `references/stages.md` first**. On a repo that already has code and no `docs/KICKOFF.md`, use `adopt` instead of a fresh kickoff (L102). Then read the stack profile the user picks (`references/stack-profiles/*.md`). Do not improvise questions; the stage file holds them.
 2. **One batched questionnaire per stage.** In Claude Code use `AskUserQuestion` (≤4 questions per call; a second call only if an answer opens a branch). In Codex or Cursor, where no question tool exists, print the same questions as a numbered list with the profile defaults marked and stop until the user answers. Never ask one question at a time.
 3. **Defaults are pre-filled from the profile** and marked "(profile default)". Silence on a question means the default.
 4. **Advisory gates.** After writing a stage's deliverables run `node <skill>/scripts/preflight.mjs <project-root>`, show its stage line, then continue. Never block on a MISSING line; list it and move on. Only `--strict` (CI) fails.
