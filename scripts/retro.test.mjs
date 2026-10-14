@@ -143,6 +143,10 @@ test("a draft that git already tracks is never rewritten", () => {
   const r = run([dir, "--force"], { PROJECT_KICKOFF_HOME: store });
   assert.equal(r.status, 1);
   assert.match(r.stderr, /git rm --cached \.kickoff\/lessons-candidates\.md/);
+  // An inherited GIT_DIR pointing at missing metadata does not hide the project's own repo.
+  const r2 = run([dir, "--force"], { PROJECT_KICKOFF_HOME: store, GIT_DIR: join(dir, "missing-git-dir") });
+  assert.equal(r2.status, 1);
+  assert.match(r2.stderr, /git rm --cached/);
   assert.equal(readFileSync(join(dir, ".kickoff/lessons-candidates.md"), "utf8"), "old draft\n");
   rmSync(dir, { recursive: true, force: true });
   rmSync(store, { recursive: true, force: true });
@@ -152,8 +156,7 @@ test("when git cannot be asked inside a repo, the draft is refused; outside any 
   const repo = mkdtempSync(join(tmpdir(), "retro-nogit-"));
   mkdirSync(join(repo, ".git"));
   assert.match(draftTrackedReason(repo, "git-binary-that-does-not-exist"), /cannot check/);
-  // An empty .git makes real git answer "not a git repository": still refused, since .git exists.
-  assert.match(draftTrackedReason(repo), /cannot check/);
+
   rmSync(repo, { recursive: true, force: true });
   const plain = mkdtempSync(join(tmpdir(), "retro-plain-"));
   assert.equal(draftTrackedReason(plain), null);

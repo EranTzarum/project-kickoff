@@ -146,11 +146,14 @@ export function saveLessons(root, store) {
 
 // Read-only. Returns why the draft must not be written, or null when it is safe.
 export function draftTrackedReason(root, git = "git") {
-  const r = spawnSync(git, ["ls-files", "--error-unmatch", "--", ".kickoff/lessons-candidates.md"], { cwd: root, encoding: "utf8" });
+  // Inherited GIT_* variables (GIT_DIR, GIT_WORK_TREE, GIT_CEILING_DIRECTORIES) could point git away from
+  // the project; drop them so git finds the project's own repo.
+  const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^GIT_/i.test(k)));
+  const r = spawnSync(git, ["ls-files", "--error-unmatch", "--", ".kickoff/lessons-candidates.md"], { cwd: root, encoding: "utf8", env });
   if (r.status === 0) return "git tracks .kickoff/lessons-candidates.md, so it would be published; run: git rm --cached .kickoff/lessons-candidates.md, then retro again";
   if (r.status === 1) return null; // a repo, file not tracked
-  // Anything else (no git, no access, "not a git repository" from a broken GIT_DIR) is safe only when no
-  // .git exists at or above the project.
+  if (r.status === 128 && /not a git repository/i.test(r.stderr || "")) return null; // no repo can publish it
+  // Any other failure (no git binary, no access) is safe only when no .git exists at or above the project.
   for (let d = resolve(root); ; d = dirname(d)) {
     if (existsSync(join(d, ".git"))) return "cannot check whether git tracks .kickoff/lessons-candidates.md (" + (r.error ? r.error.code : (r.stderr || "").trim().split("\n")[0]) + "); fix git access, then retro again";
     if (dirname(d) === d) return null; // no repo above: nothing to publish
