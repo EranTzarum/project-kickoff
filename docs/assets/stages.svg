@@ -23,7 +23,7 @@
     <text x="609" y="96" text-anchor="middle">redirect URLs,</text><text x="609" y="112" text-anchor="middle">SMTP, OAuth,</text><text x="609" y="128" text-anchor="middle">env matrix</text>
     <rect x="680" y="54" width="118" height="110" rx="8" fill="#fff" stroke="#F59E0B"/>
     <text x="739" y="74" text-anchor="middle" font-weight="bold">5 · Harness</text>
-    <text x="739" y="96" text-anchor="middle">CLAUDE.md, hooks,</text><text x="739" y="112" text-anchor="middle">agents, gates,</text><text x="739" y="128" text-anchor="middle">worktrees, CI</text>
+    <text x="739" y="96" text-anchor="middle">AGENTS.md, hooks,</text><text x="739" y="112" text-anchor="middle">agents, gates,</text><text x="739" y="128" text-anchor="middle">worktrees, CI</text>
     <g stroke="#78716C" stroke-width="1.5" marker-end="url(#a)">
       <line x1="148" y1="109" x2="160" y2="109"/><line x1="278" y1="109" x2="290" y2="109"/><line x1="408" y1="109" x2="420" y2="109"/><line x1="538" y1="109" x2="550" y2="109"/><line x1="668" y1="109" x2="680" y2="109"/>
     </g>

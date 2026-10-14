@@ -27,11 +27,9 @@ session; ask it to update the project-kickoff rows after a big change.
 ## Open items, best first
 
 Done 2026-10-11: strict preflight and gate-runner fixes (PR #5, issue #1); render end-to-end test (PR #7);
-hook bypass fix as an allowlist (issue #2, see below).
+hook bypass fix as an allowlist (issue #2, see below); AGENTS.md as the only instruction file in generated projects, stage 5 ends with `/ready` (issue #3, lesson L100).
 
-1. **Issue #3: AGENTS.md as the only instruction file in generated projects.** `render.mjs` still writes
-   `CLAUDE.md` plus an `AGENTS.md` copy; touch points are listed in the issue. Add a lesson before the rule.
-2. **Has not been used on a new project since it was anonymized.** The next real kickoff should
+1. **Has not been used on a new project since it was anonymized.** The next real kickoff should
    record what was missing in a lesson and a rule.
 
 **Hook design (issue #2).** The Bash guards are an allowlist, not a shell parser: protected text (destructive

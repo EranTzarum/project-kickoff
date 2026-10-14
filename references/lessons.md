@@ -117,6 +117,7 @@ Format: `| id | date | category | what happened | evidence | rule | stage |`
 | L79 | 2026-08-05 | i18n | RTL/bidi fixes recurred all project long despite a day-one "logical utilities" rule | 7223b19…a88f13a | Shared RTL primitives plus a lint rule banning `ml-`/`mr-`/`text-left` | workspace |
 | L80 | 2026-08-04 | ui | The design-token system was committed and reverted the same day; three redesign mockups all rejected | 6687f26 → 1d6e2b4, vault 2026-08-04 | Approve design tokens/primitives with the owner before UI waves; do not run design passes unattended | workspace |
 | L81 | 2026-08-10 | orchestration | Four parallel tickets each re-pasted the full plan; two seats were dispatched twice | Codex 08-10 | Tickets reference one shared context file; per-seat completion is tracked before redispatch | workspace |
+| L100 | 2026-10-11 | docs | The skill rendered CLAUDE.md plus an identical AGENTS.md copy into every project: two files to keep in step, and the copy is what Codex and Cursor actually read | issue #3, owner decision 2026-10-11 | One instruction file, AGENTS.md (Claude Code reads it natively when no CLAUDE.md exists); Claude-only rules go in a section inside it; graphify and the tool checks belong to `/ready`, not to stage 5 | workspace |
 
 ## Build loop (stage 6, per feature)
 

@@ -22,10 +22,10 @@ Ask the right questions *before* the first line of code. Generate the docs and g
 
 | 🧑 You do | ⚙️ It does | 🎁 You get |
 |---|---|---|
-| Type `/project-kickoff` in a fresh repo and answer **six short questionnaires** | Turns your answers into **real files** (docs, `CLAUDE.md`, hooks, sub-agents, gate runner, CI) and checks what's missing | A project that starts with its guardrails, plus a **build-loop checklist** for every feature |
+| Type `/project-kickoff` in a fresh repo and answer **six short questionnaires** | Turns your answers into **real files** (docs, `AGENTS.md`, hooks, sub-agents, gate runner, CI) and checks what's missing | A project that starts with its guardrails, plus a **build-loop checklist** for every feature |
 
 Every question exists because something specific went wrong on a real three-month build. There are
-**99 dated lessons** behind the checklist, and the agent can quote the one behind any rule.
+**100 dated lessons** behind the checklist, and the agent can quote the one behind any rule.
 
 <p align="center">
   <img src="docs/assets/stages.svg" alt="Six pre-flight stages, then a build loop" width="980">
@@ -56,11 +56,11 @@ file a script can check, and generates the guardrail so the next project does no
 ## What it does
 
 - 🧭 **Six pre-flight stages, one batched questionnaire each** — 3–6 questions, defaults pre-filled, silence = default. No drip-fed interruptions.
-- 📄 **Answers become files** — `render.mjs` writes `DOMAIN.md`, `ARCHITECTURE.md`, `ENV_MATRIX.md`, `MIGRATION_RUNBOOK.md`, `STATE.md`, `CLAUDE.md`, hooks, agents, scripts and CI from templates. Nothing lives only in the chat.
+- 📄 **Answers become files** — `render.mjs` writes `DOMAIN.md`, `ARCHITECTURE.md`, `ENV_MATRIX.md`, `MIGRATION_RUNBOOK.md`, `STATE.md`, `AGENTS.md`, hooks, agents, scripts and CI from templates. Nothing lives only in the chat.
 - 🔎 **Advisory checker** — `preflight.mjs` prints `READY` / `MISSING` per stage plus cross-checks (env keys vs matrix, tables without RLS, functions callable by anon). Never blocks; `--strict` for CI.
 - 🛡️ **Guardrails generated, not remembered** — four hooks (env-edit, destructive SQL, service-role, migration-number), two sub-agents (quality-gate, rls-auditor), a gate runner, a safe worktree script, a clean-clone CI workflow.
 - 🔁 **Build-loop checklist per feature** — design → ticket → worktree → gates → cross-model verify → migration runbook → `STATE.md`.
-- 📚 **99 dated lessons with evidence** — every checklist item cites one. Ask *why* and get the commit, the doc line, or the chat that taught it.
+- 📚 **100 dated lessons with evidence** — every checklist item cites one. Ask *why* and get the commit, the doc line, or the chat that taught it.
 - 🧱 **Stack profiles** — Supabase + React/Vite + Vercel ships as default with a platform-limits sheet; add your own in one file.
 - 🤝 **Runs in Claude Code, Codex CLI and Cursor** — same folder, no build, no dependencies.
 
@@ -98,7 +98,7 @@ Copy (or clone) the same folder into each harness's user skill root. The folder 
 
 Codex and Cursor have no question widget: the agent prints the same questionnaire as a numbered list with the
 defaults marked and waits for your reply. They also do not run Claude Code hooks; for them the generated
-`AGENTS.md` (a copy of `CLAUDE.md`) plus the CI workflow are the enforcement.
+`AGENTS.md` (the only instruction file) plus the CI workflow are the enforcement.
 </details>
 
 ---
@@ -190,7 +190,7 @@ Three ideas make this more than a wiki checklist:
 | 2 | **Architecture & security** | tenancy, service-role allowlist, anon surface, frozen contracts, peer-read paths, platform limits, size budgets | `docs/ARCHITECTURE.md` | revoke EXECUTE on every function (L22) · Hobby plan = one cron/day (L25) · canonical domain in config (L27) |
 | 3 | **Database** | prod + separate test project, naming, types targets, backups | migration template, auth-hook recipe, `db-types.mjs`, runbook | hook role needs its own policy (L37) · no partial index behind an upsert (L41) · CHECK passes on NULL (L43) |
 | 4 | **Auth & environments** | origins per env, SMTP, OAuth, Preview isolation | `docs/ENV_MATRIX.md`, `.env.example` | redirect URLs before the first invite (L50) · SMTP before auth mail (L52) · Preview gets no prod secrets (L56) |
-| 5 | **Workspace & harness** | gate commands, deploy rule, worker platforms, shell & line endings | `CLAUDE.md`, hooks, agents, `gates.mjs`, worktree scripts, CI | gates pass in a clean worktree (L60) · never junction `node_modules` (L62) · deploy from `main` only (L65) |
+| 5 | **Workspace & harness** | gate commands, deploy rule, worker platforms, shell & line endings | `AGENTS.md`, hooks, agents, `gates.mjs`, worktree scripts, CI | gates pass in a clean worktree (L60) · never junction `node_modules` (L62) · deploy from `main` only (L65) |
 | 6 | **Build loop** | per feature | checklist | acceptance as invariants not counts (L82) · cap identical retries at 2 (L89) · orchestrator routes, workers build (L91) |
 
 ### What lands in your project
@@ -202,7 +202,7 @@ docs/ARCHITECTURE.md         tenancy · privileged access · anon surface · ide
 docs/ENV_MATRIX.md           env vars × Dev/Preview/Prod · redirect URLs · SMTP · OAuth · databases
 docs/MIGRATION_RUNBOOK.md    naming · template rules · additive → deploy → revoke · rollback
 STATE.md                     the ONE living "where are we" file (done / in flight / next / mistakes made)
-CLAUDE.md + AGENTS.md        rules file (always / never); identical copy for Codex & Cursor
+AGENTS.md                   rules file (always / never); the only instruction file
 .env.example                 keys only — cross-checked against ENV_MATRIX
 supabase/migrations/         _TEMPLATE.sql (RLS + revokes + CHECK-not-null baked in) · auth-hook recipe
 .claude/settings.json        hook wiring
@@ -217,7 +217,7 @@ scripts/                     gates.mjs · db-types.mjs · worktree-setup.ps1/.sh
 
 ## The lessons behind the checklist
 
-[`references/lessons.md`](references/lessons.md) — **99 rows**, each with a date, a category, what happened,
+[`references/lessons.md`](references/lessons.md) — **100 rows**, each with a date, a category, what happened,
 the evidence (commit hash, doc line or chat), the rule it produced and the stage that now owns it. Mined from a
 real project's git history (365 commits, 63 migrations), its docs, the author's decision notes, and the
 author's chat history across Claude Code, Codex and Cursor.
@@ -228,7 +228,7 @@ flowchart LR
     D["repo docs"] --> L
     V["decision notes"] --> L
     C["chat history: Claude, Codex, Cursor"] --> L
-    L[("lessons.md — 99 dated rows")] --> S["stages.md — questions and exit checklists"]
+    L[("lessons.md — 100 dated rows")] --> S["stages.md — questions and exit checklists"]
     L --> H["harness.md — which hook guards which lesson"]
     S --> T["templates/"]
     H --> T
@@ -251,7 +251,7 @@ AGENTS.md                                 rules for agents working on this repo 
 agents/openai.yaml                        Codex display metadata
 references/
   stages.md                               questionnaire · deliverables · exit checklist per stage (cites lessons)
-  lessons.md                              99 dated lessons
+  lessons.md                              100 dated lessons
   harness.md                              which generated file guards which lesson; what Codex/Cursor lack
   stack-profiles/supabase-react-vercel.md defaults + platform-limits sheet
 templates/

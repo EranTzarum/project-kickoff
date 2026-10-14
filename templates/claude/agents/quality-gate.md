@@ -1,6 +1,6 @@
 ---
 name: quality-gate
-description: Verification gate for this repo. Runs the gate list from docs/KICKOFF.md, then audits tenant isolation and hygiene against CLAUDE.md. Use before any checkpoint commit and after any migration or feature stage.
+description: Verification gate for this repo. Runs the gate list from docs/KICKOFF.md, then audits tenant isolation and hygiene against AGENTS.md. Use before any checkpoint commit and after any migration or feature stage.
 tools: ["Read", "Grep", "Glob", "Bash"]
 model: sonnet
 ---
