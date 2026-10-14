@@ -71,7 +71,10 @@ const tiers = a.environments?.length ? a.environments : [
   { name: "Test", db: a.testProjectId, realUsers: false, disposable: true },
   { name: "Prod", web: a.prodUrl, branch: "main", db: a.supabaseProjectId, redirects: glob(a.prodUrl), realUsers: true, disposable: false },
 ];
-const cell = (v) => (v === undefined || v === null || v === "" ? "-" : String(v));
+// Markdown table cell: a | inside a value is escaped (\|) and newlines are flattened, so a value can never
+// shift the columns that preflight.mjs reads (a branch named "main|release" stays one cell).
+const cellText = (v) => String(v).replace(/\r?\n/g, " ").replace(/\|/g, "\\|");
+const cell = (v) => (v === undefined || v === null || v === "" ? "-" : cellText(v));
 const yn = (b) => (b ? "yes" : "no");
 const LEGACY_SCOPE = { Dev: "dev", Preview: "preview", Prod: "prod" };
 const scope = (e, name) => e.tiers?.[name] ?? e[LEGACY_SCOPE[name]] ?? "yes";
@@ -89,7 +92,7 @@ const derived = {
   SERVICE_ROLE_DIRS: (a.serviceRoleDirs ?? []).join(", "),
   ENV_KEYS: envKeys.map((e) => `${e.key}=`).join("\n"),
   ENV_ROWS: envKeys
-    .map((e) => `| ${e.key} | ${e.purpose ?? ""} | ${tiers.map((t) => scope(e, t.name)).join(" | ")} | ${e.secret ? "yes" : "no"} |`)
+    .map((e) => `| ${cellText(e.key)} | ${cellText(e.purpose ?? "")} | ${tiers.map((t) => cell(scope(e, t.name))).join(" | ")} | ${e.secret ? "yes" : "no"} |`)
     .join("\n"),
   GATES: (a.gates ?? []).join("\n"),
   PLATFORM_LIMITS: (a.platformLimits ?? []).map((l) => `- ${l}`).join("\n"),

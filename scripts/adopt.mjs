@@ -3,7 +3,7 @@
 //   node adopt.mjs <project-root> [--write] [--force]
 // Dry run by default. --write creates only docs/KICKOFF.md and .kickoff/adopt.json (plus the ledger
 // event); it never touches an existing document. Gaps never change the exit code.
-import { readFileSync, writeFileSync, existsSync, statSync, readdirSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, statSync, lstatSync, readdirSync, mkdirSync } from "node:fs";
 import { join, resolve, basename, dirname, posix } from "node:path";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -119,17 +119,19 @@ try {
   }
 } catch { /* not a git repo or no git: skip */ }
 if (!workflows.length) gap("high", "no-ci", "no CI workflow; gates only run on someone's machine");
-const walk = (dir, depth) => {
+// No depth limit; symlinked folders are not followed (lstat), so a link cycle cannot loop.
+const isRealDir = (p) => { try { return lstatSync(join(root, p)).isDirectory(); } catch { return false; } };
+const walk = (dir) => {
   for (const e of ls(dir)) {
     if (e === "node_modules" || e === ".git") continue;
     const rel = dir === "." ? e : `${dir}/${e}`;
-    if (isDir(rel)) { if (depth < 4) walk(rel, depth + 1); }
+    if (isRealDir(rel)) { walk(rel); }
     else if (e.endsWith(".sh") && readOr(rel).includes("\r\n")) {
       gap("high", "crlf-sh", `${rel} has CRLF line endings; it fails on Linux (set: pipefail: invalid option)`);
     }
   }
 };
-walk(".", 1);
+walk(".");
 if (!find("AGENTS.md", true) && !find("CLAUDE.md", true)) gap("medium", "no-rules", "no agent rules file");
 if (![...present, ...Object.keys(mapped)].includes("STATE.md")) gap("medium", "no-state", "no living state file; agents cannot resume");
 

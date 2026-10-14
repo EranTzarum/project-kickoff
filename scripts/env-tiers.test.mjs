@@ -86,3 +86,17 @@ test("a tier named in capitals (CI) is not read as an env key by preflight", () 
     assert.doesNotMatch(r.stdout, /CHECK env: .*key CI /);
   });
 });
+
+test("a | inside a tier value is escaped and cannot hide the shared real-user database", () => {
+  const answers = { ...example, environments: [
+    { name: "Prod", web: "https://app.example.com", branch: "main|release", db: "shared-db", realUsers: true },
+    { name: "Test|QA", db: "shared-db", disposable: true },
+  ] };
+  withRender(answers, (out) => {
+    const m = matrix(out);
+    assert.match(m, /\| main\\\|release \|/);
+    assert.match(m, /\| KEY \| Purpose \| Prod \| Test\\\|QA \| Secret\? \|/);
+    const r = spawnSync(process.execPath, [join(here, "preflight.mjs"), out], { encoding: "utf8" });
+    assert.match(r.stdout, /CHECK env-tiers: database shared-db holds real users \(Prod\) and is shared with disposable tier Test\|QA/);
+  });
+});

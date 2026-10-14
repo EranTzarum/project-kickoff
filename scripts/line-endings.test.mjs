@@ -100,3 +100,16 @@ test("adopt-mapped environments file is checked for env-tiers", () => {
   );
   rmSync(dir, { recursive: true, force: true });
 });
+
+test("a CRLF shell script deep in the tree is still found, by preflight and by adopt", () => {
+  const dir = mkdtempSync(join(tmpdir(), "le-deep-"));
+  const deep = "apps/web/scripts/deploy/linux/release/deploy.sh";
+  mkdirSync(join(dir, dirname(deep)), { recursive: true });
+  writeFileSync(join(dir, deep), "#!/usr/bin/env bash\r\nset -euo pipefail\r\n");
+  writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "demo-app" }));
+  const adopt = spawnSync(process.execPath, [join(here, "adopt.mjs"), dir, "--write"], { encoding: "utf8" });
+  assert.match(adopt.stdout, new RegExp(`GAP high: ${deep.replace(/[./]/g, "\\$&")} has CRLF`));
+  const r = spawnSync(process.execPath, [join(here, "preflight.mjs"), dir], { encoding: "utf8" });
+  assert.match(r.stdout, new RegExp(`CHECK line-endings: ${deep.replace(/[./]/g, "\\$&")} has CRLF`));
+  rmSync(dir, { recursive: true, force: true });
+});

@@ -9,7 +9,7 @@
 //   line-endings: shell scripts must be LF; .gitattributes must pin *.sh eol=lf when .sh files exist
 // Prints one line per stage and per failed cross-check. Exit 0 always, except --strict with any
 // MISSING/CHECK line → exit 1 (for CI). CRLF-tolerant. No dependencies.
-import { readFileSync, existsSync, statSync, readdirSync, appendFileSync } from "node:fs";
+import { readFileSync, existsSync, statSync, lstatSync, readdirSync, appendFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 const args = process.argv.slice(2);
@@ -120,7 +120,8 @@ if (existsSync(join(root, envMatrix))) {
     for (const line of norm.slice(sec).split("\n")) {
       if (line.startsWith("## ") && tiers.length) break;
       if (!line.startsWith("|")) continue;
-      const cells = line.slice(1, -1).split("|").map((c) => c.trim());
+      // Split on unescaped pipes only; render.mjs writes a | inside a value as \|.
+      const cells = line.trim().slice(1, -1).split(/(?<!\\)\|/).map((c) => c.trim().replace(/\\\|/g, "|"));
       if (!cells[0] || cells[0] === "Tier" || /^-+$/.test(cells[0])) continue;
       if (cells.length < 8) continue;
       tiers.push({ name: cells[0], db: cells[3], real: cells[6], disp: cells[7] });
@@ -157,17 +158,18 @@ if (existsSync(join(root, envMatrix))) {
 const readRaw = (p) => readFileSync(join(root, p), "utf8");
 const shellScripts = [];
 // An unreadable folder or a broken link is skipped: the checker stays advisory and never crashes.
-const walkSh = (dir, depth) => {
+const walkSh = (dir) => {
   let entries = [];
   try { entries = readdirSync(join(root, dir)); } catch { return; }
   for (const e of entries) {
     if (e === "node_modules" || e === ".git") continue;
     const rel = dir === "." ? e : `${dir}/${e}`;
     const full = join(root, rel);
+    // No depth limit; symlinked folders are not followed, so a link cycle cannot loop.
     let isDir = false, isFile = false;
-    try { const st = statSync(full); isDir = st.isDirectory(); isFile = st.isFile(); } catch { continue; }
+    try { const st = lstatSync(full); isDir = st.isDirectory(); isFile = st.isFile(); } catch { continue; }
     if (isDir) {
-      if (depth < 4) walkSh(rel, depth + 1);
+      walkSh(rel);
     } else if (isFile && (e.endsWith(".sh") || e.endsWith(".bash"))) {
       shellScripts.push(rel);
       let text = "";
@@ -179,7 +181,7 @@ const walkSh = (dir, depth) => {
     }
   }
 };
-walkSh(".", 1);
+walkSh(".");
 if (shellScripts.length) {
   const ga = join(root, ".gitattributes");
   const gaText = existsSync(ga) ? readRaw(".gitattributes").replace(/\r\n/g, "\n") : "";
