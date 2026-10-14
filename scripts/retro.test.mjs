@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { draftCandidates, parseCandidates, saveLessons, readStore, draftPath } from "./retro.mjs";
+import { draftCandidates, parseCandidates, saveLessons, readStore, draftPath, formatCandidates } from "./retro.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const run = (args, env = {}) => spawnSync(process.execPath, [join(here, "retro.mjs"), ...args], { encoding: "utf8", env: { ...process.env, ...env } });
@@ -116,5 +116,37 @@ test("--list empty and with saved row", () => {
   assert.match(empty.stdout, /no saved lessons/);
   writeFileSync(join(store, "lessons.jsonl"), JSON.stringify({ v: 1, saved: "2026-01-01T00:00:00.000Z", project_id: "x", date: "2026-01-01", category: "process", what: "trap", evidence: "STATE.md", rule: "avoid trap", stage: "build-loop", class: "CANDIDATE REUSABLE" }) + "\n");
   assert.match(run(["--list"], env).stdout, /avoid trap/);
+  rmSync(store, { recursive: true, force: true });
+});
+
+test("the draft never lands inside the project: bad project ids and a store inside the project are refused", () => {
+  const dir = project();
+  mkdirSync(join(dir, ".kickoff"), { recursive: true });
+  writeFileSync(join(dir, "STATE.md"), "## Mistakes\n- private\n");
+  const inside = join(dir, "store");
+  const r = run([dir], { PROJECT_KICKOFF_HOME: inside });
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /inside the project/);
+  assert.equal(existsSync(inside), false);
+  writeFileSync(join(dir, ".kickoff/project.json"), JSON.stringify({ project_id: "../../escape" }));
+  const store = mkdtempSync(join(tmpdir(), "retro-store-"));
+  assert.throws(() => draftPath(dir, store), /invalid project_id/);
+  assert.equal(run([dir], { PROJECT_KICKOFF_HOME: store }).status, 1);
+  rmSync(dir, { recursive: true, force: true });
+  rmSync(store, { recursive: true, force: true });
+});
+
+test("--save still reads a draft made by the old version in .kickoff/", () => {
+  const dir = project();
+  const store = mkdtempSync(join(tmpdir(), "retro-store-"));
+  writeFileSync(join(dir, "STATE.md"), "## Mistakes\n- old one\n");
+  const rows = draftCandidates(dir).map((r) => ({ ...r, rule: "Keep the old rule" }));
+  mkdirSync(join(dir, ".kickoff"), { recursive: true });
+  writeFileSync(join(dir, ".kickoff/lessons-candidates.md"), formatCandidates(rows));
+  const r = run([dir, "--save"], { PROJECT_KICKOFF_HOME: store });
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stderr, /old draft/);
+  assert.equal(readStore(store)[0].rule, "Keep the old rule");
+  rmSync(dir, { recursive: true, force: true });
   rmSync(store, { recursive: true, force: true });
 });

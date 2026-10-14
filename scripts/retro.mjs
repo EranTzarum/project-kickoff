@@ -2,7 +2,7 @@
 // Draft lesson candidates from STATE.md + .kickoff/HISTORY.jsonl; save to the user's lesson store.
 // The draft lives in the user's store, never inside the project, so it can never be committed.
 import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join, resolve, relative, isAbsolute } from "node:path";
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { isValidRow, projectId } from "./log.mjs";
@@ -18,10 +18,20 @@ export function storeDir() {
   return process.env.PROJECT_KICKOFF_HOME || join(homedir(), ".project-kickoff");
 }
 
-// <store>/drafts/<project id>.md. projectId creates .kickoff/project.json when it is missing.
+// <store>/drafts/<project id>.md. projectId creates .kickoff/project.json when it is missing. The id must be
+// the random hex log.mjs writes, and the path must sit outside the project (PROJECT_KICKOFF_HOME could
+// point inside it), or the draft could be committed.
 export function draftPath(root, store) {
-  return join(store, "drafts", `${projectId(root)}.md`);
+  const pid = projectId(root);
+  if (!/^[0-9a-f]{8,64}$/.test(String(pid))) throw new Error(`.kickoff/project.json has an invalid project_id; expected hex`);
+  const f = resolve(store, "drafts", `${pid}.md`);
+  const rel = relative(resolve(root), f);
+  if (rel === "" || (rel.split(/[\\/]/)[0] !== ".." && !isAbsolute(rel))) throw new Error(`the lesson store ${resolve(store)} is inside the project; set PROJECT_KICKOFF_HOME outside it`);
+  return f;
 }
+
+// Drafts made before the store held them (.kickoff/lessons-candidates.md) are still read once by --save.
+const LEGACY = ".kickoff/lessons-candidates.md";
 
 export function readStore(store) {
   const f = join(store, "lessons.jsonl");
@@ -129,7 +139,11 @@ export function parseCandidates(text) {
 }
 
 export function saveLessons(root, store) {
-  const candF = draftPath(root, store);
+  let candF = draftPath(root, store);
+  if (!existsSync(candF) && existsSync(join(root, LEGACY))) {
+    candF = join(root, LEGACY);
+    console.error(`read the old draft ${LEGACY}; delete it after this save (new drafts live in the lesson store)`);
+  }
   if (!existsSync(candF)) throw new Error(`missing draft ${candF}; run retro.mjs <project-root> first`);
   const rows = parseCandidates(readFileSync(candF, "utf8"));
   const pid = projectId(root);
@@ -165,7 +179,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     } catch (e) { console.error(e.message); process.exit(1); }
     process.exit(0);
   }
-  const outF = draftPath(root, storeDir());
+  let outF;
+  try { outF = draftPath(root, storeDir()); } catch (e) { console.error(e.message); process.exit(1); }
   if (existsSync(outF) && !args.includes("--force")) { console.error(`${outF} exists; use --force`); process.exit(1); }
   const rows = draftCandidates(root);
   mkdirSync(join(storeDir(), "drafts"), { recursive: true });
