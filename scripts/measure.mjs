@@ -23,12 +23,14 @@ export function measure(rows) {
   }
 
   // Owner actions: open → done by id; still-open ones report their age.
-  const opened = of("owner_action_open"), closed = new Map(of("owner_action_done").map((r) => [r.id, r]));
+  // Rows without a valid id or count (a hand-edited ledger) are left out, not guessed.
+  const hasId = (r) => typeof r.id === "string" && r.id.trim() !== "";
+  const opened = of("owner_action_open").filter(hasId), closed = new Map(of("owner_action_done").filter(hasId).map((r) => [r.id, r]));
   const now = Date.now();
   const actions = opened.map((r) => ({ id: r.id, days: days((closed.has(r.id) ? t(closed.get(r.id)) : now) - t(r)), open: !closed.has(r.id) }));
 
   const openDays = actions.filter((a) => a.open).map((a) => a.days);
-  const gates = of("gate_run");
+  const gates = of("gate_run").filter((g) => Number.isInteger(g.failed));
   const pilot = of("pilot")[0];
   return {
     events: rows.length,

@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawnSync, spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { measure } from "./measure.mjs";
 
@@ -64,6 +64,39 @@ test("log.mjs appends manual events and rejects unknown ones", () => {
   rmSync(dir, { recursive: true, force: true });
 });
 
+test("log.mjs rejects rows missing their required fields, and appends nothing", () => {
+  const dir = mkdtempSync(join(tmpdir(), "measure-"));
+  for (const args of [["owner_action_open"], ["owner_action_done", "--id", " "], ["stage_start"], ["stage_start", "--stage", "x"], ["stage_start", "--stage", "9"]]) {
+    assert.equal(run("log.mjs", [dir, ...args]).status, 1, args.join(" "));
+  }
+  assert.deepEqual(ledger(dir), []);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("ledger problems never change preflight's or gates.mjs's exit code", () => {
+  const dir = mkdtempSync(join(tmpdir(), "measure-"));
+  run("render.mjs", [dir, answers]);
+  writeFileSync(join(dir, ".kickoff/project.json"), "{ not json");
+  const r = run("preflight.mjs", [dir]);
+  assert.equal(r.status, 0);
+  assert.match(r.stdout, /NOTE ledger: not recorded/);
+  assert.equal(run("preflight.mjs", [dir, "--strict"]).status, 0, "strict still passes a complete project");
+  const g = spawnSync(process.execPath, [join(dir, "scripts/gates.mjs")], { cwd: dir, encoding: "utf8", env });
+  assert.match(g.stdout, /NOTE ledger: not recorded/);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("concurrent first logs share one project id", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "measure-"));
+  const one = () => new Promise((ok) => spawn(process.execPath, [join(here, "log.mjs"), dir, "pilot"], { env }).on("exit", ok));
+  await Promise.all(Array.from({ length: 8 }, one));
+  const rows = ledger(dir);
+  assert.equal(rows.length, 8);
+  assert.equal(new Set(rows.map((r) => r.project_id)).size, 1);
+  assert.equal(JSON.parse(readFileSync(join(dir, ".kickoff/project.json"), "utf8")).project_id, rows[0].project_id);
+  rmSync(dir, { recursive: true, force: true });
+});
+
 test("measure: stage days, pilot, owner actions, gate pass rate; missing data is null", () => {
   const at = (d) => new Date(Date.UTC(2026, 0, 1) + d * 86400000).toISOString();
   const rows = [
@@ -87,6 +120,9 @@ test("measure: stage days, pilot, owner actions, gate pass rate; missing data is
   assert.equal(m.owner_actions.list[0].days, 2);
   assert.equal(m.gate_pass_rate, 0.5);
   assert.equal(m.regenerations, 1);
+  const bad = measure([{ ts: at(0), event: "owner_action_open" }, { ts: at(1), event: "owner_action_done" }, { ts: at(1), event: "gate_run" }]);
+  assert.equal(bad.owner_actions.total, 0, "rows without an id are left out");
+  assert.equal(bad.gate_pass_rate, null, "a gate_run without counts is not a failure");
   const empty = measure([]);
   assert.equal(empty.idea_to_pilot_days, null);
   assert.equal(empty.gate_pass_rate, null);

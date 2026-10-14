@@ -95,12 +95,17 @@ if (existsSync(migDir)) {
 // Only once the project has .kickoff/project.json, and never in CI.
 const ledger = join(root, ".kickoff/HISTORY.jsonl");
 const idFile = join(root, ".kickoff/project.json");
+// Best effort: a ledger problem prints a NOTE and never changes the exit code.
 if (!process.env.CI && existsSync(idFile)) {
-  const rows = existsSync(ledger) ? read(".kickoff/HISTORY.jsonl").split("\n").filter(Boolean).map((l) => { try { return JSON.parse(l); } catch { return {}; } }) : [];
-  const done = new Set(rows.filter((r) => r.event === "stage_ready").map((r) => r.stage));
-  const project_id = JSON.parse(read(".kickoff/project.json")).project_id;
-  for (const n of ready.filter((n) => !done.has(n))) {
-    appendFileSync(ledger, JSON.stringify({ v: 1, ts: new Date().toISOString(), project_id, event: "stage_ready", stage: n }) + "\n");
+  try {
+    const rows = existsSync(ledger) ? read(".kickoff/HISTORY.jsonl").split("\n").filter(Boolean).map((l) => { try { return JSON.parse(l); } catch { return {}; } }) : [];
+    const done = new Set(rows.filter((r) => r.event === "stage_ready").map((r) => r.stage));
+    const project_id = JSON.parse(read(".kickoff/project.json")).project_id;
+    for (const n of ready.filter((n) => !done.has(n))) {
+      appendFileSync(ledger, JSON.stringify({ v: 1, ts: new Date().toISOString(), project_id, event: "stage_ready", stage: n }) + "\n");
+    }
+  } catch (e) {
+    console.log(`NOTE ledger: not recorded (${e.message})`);
   }
 }
 

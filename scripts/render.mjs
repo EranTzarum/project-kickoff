@@ -113,7 +113,9 @@ for (const [stage, files] of Object.entries(STAGE_FILES)) {
   }
 }
 for (const [stage, files] of Object.entries(writtenByStage)) {
-  if (files) logEvent(root, force ? "regenerate" : "render", { stage: Number(stage), files });
+  // The ledger is best effort: a failure to record never fails the render.
+  try { if (files) logEvent(root, force ? "regenerate" : "render", { stage: Number(stage), files }); }
+  catch (e) { console.log(`NOTE ledger: ${e.message}`); }
 }
 // The checker travels with the project so CI can run it without the skill installed.
 if (onlyStage === null || onlyStage === 5) {

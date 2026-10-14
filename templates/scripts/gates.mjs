@@ -27,9 +27,14 @@ for (const cmd of commands) {
   if (!ok) console.log((r.stdout + r.stderr).trim());
 }
 console.log(`\n${commands.length - failed}/${commands.length} gates passed`);
-// Kickoff ledger (measure.mjs reads it): one gate_run row per run, never in CI.
+// Kickoff ledger (measure.mjs reads it): one gate_run row per run, never in CI. Best effort: a
+// ledger problem prints a NOTE and never changes the exit code.
 if (!process.env.CI && existsSync(".kickoff/project.json")) {
-  const { project_id } = JSON.parse(readFileSync(".kickoff/project.json", "utf8"));
-  appendFileSync(".kickoff/HISTORY.jsonl", JSON.stringify({ v: 1, ts: new Date().toISOString(), project_id, event: "gate_run", passed: commands.length - failed, failed }) + "\n");
+  try {
+    const { project_id } = JSON.parse(readFileSync(".kickoff/project.json", "utf8"));
+    appendFileSync(".kickoff/HISTORY.jsonl", JSON.stringify({ v: 1, ts: new Date().toISOString(), project_id, event: "gate_run", passed: commands.length - failed, failed }) + "\n");
+  } catch (e) {
+    console.log(`NOTE ledger: not recorded (${e.message})`);
+  }
 }
 process.exit(failed ? 1 : 0);
