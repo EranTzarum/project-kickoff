@@ -7,9 +7,9 @@ User-facing docs: `README.md`. Agent instructions: `SKILL.md`.
 ## Layout
 
 - `SKILL.md`: modes, rules, stage loop.
-- `references/`: `stages.md` (questionnaire, deliverables, exit checklist per stage), `lessons.md` (100 lessons), `harness.md`, `stack-profiles/`.
+- `references/`: `stages.md` (questionnaire, deliverables, exit checklist per stage), `lessons.md` (101 lessons), `harness.md`, `stack-profiles/`.
 - `templates/`: files rendered into a project; `PLACEHOLDERS.md` lists every placeholder.
-- `scripts/render.mjs` (answers → files, skips existing), `scripts/preflight.mjs` (advisory checker), `scripts/preflight.test.mjs`, `scripts/hooks.test.mjs`, `scripts/render.test.mjs`.
+- `scripts/render.mjs` (answers → files, skips existing), `scripts/preflight.mjs` (advisory checker), `scripts/preflight.test.mjs`, `scripts/hooks.test.mjs`, `scripts/render.test.mjs`, `scripts/log.mjs` + `scripts/measure.mjs` (event ledger and metrics, `docs/METRICS.md`), `scripts/measure.test.mjs`.
 
 ## Rules
 
@@ -25,7 +25,7 @@ User-facing docs: `README.md`. Agent instructions: `SKILL.md`.
 ## Gate
 
 ```bash
-node --test scripts/preflight.test.mjs scripts/hooks.test.mjs scripts/render.test.mjs
+node --test scripts/preflight.test.mjs scripts/hooks.test.mjs scripts/render.test.mjs scripts/measure.test.mjs
 node ~/.claude/skills/readmelyzer/scripts/check-readme.mjs . --public --all-files
 ```
 
@@ -35,7 +35,3 @@ Copies of this skill live in `~/.codex/skills/project-kickoff` and `~/.cursor/sk
 ## Resuming work
 
 Start at `docs/TAKEOVER.md`: state, open items, gate and release steps. The session runs from the umbrella folder and works only inside this repo.
-
-## Resuming work
-
-Start at [docs/TAKEOVER.md](docs/TAKEOVER.md).

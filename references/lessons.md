@@ -20,6 +20,7 @@ Format: `| id | date | category | what happened | evidence | rule | stage |`
 | L7 | 2026-08-12 | process | A full session went to decoding Cursor's bucket-vs-wallet billing that was never verified before adoption | Cursor prompts 08-12 | Research a new paid tool's quota/billing model once, up front, and record it in the vault | intake |
 | L8 | 2026-07-19 | process | A worker stalled asking permission to touch a shared dialog component and needed a second "AUTHORIZED" ticket | Codex R6 | Pre-authorize backward-compatible edits to shared components in the ticket's scope | intake |
 | L9 | 2026-08-06 | process | A plan was approved, then the owner had to add an archive-visibility rule before generation | Cursor prompts 08-06 | A plan is approvable only with full acceptance criteria including edge-case visibility rules | intake |
+| L101 | 2026-10-14 | process | The skill promised speed but recorded nothing: neither the reference build nor a later field run could say how long a stage or an owner blocker took, so "idea to pilot in two weeks" could not be checked | field run 2026-10-13/14; plan v2 | Every project keeps an append-only event ledger from stage 0 (`.kickoff/HISTORY.jsonl`); speed claims come only from `measure.mjs` over real ledgers | intake |
 
 ## Domain and data model (stage 1)
 
