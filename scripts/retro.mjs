@@ -149,7 +149,8 @@ export function draftTrackedReason(root, git = "git") {
   const r = spawnSync(git, ["ls-files", "--error-unmatch", "--", ".kickoff/lessons-candidates.md"], { cwd: root, encoding: "utf8" });
   if (r.status === 0) return "git tracks .kickoff/lessons-candidates.md, so it would be published; run: git rm --cached .kickoff/lessons-candidates.md, then retro again";
   if (r.status === 1) return null; // a repo, file not tracked
-  if (r.status === 128 && /not a git repository/i.test(r.stderr || "")) return null;
+  // Anything else (no git, no access, "not a git repository" from a broken GIT_DIR) is safe only when no
+  // .git exists at or above the project.
   for (let d = resolve(root); ; d = dirname(d)) {
     if (existsSync(join(d, ".git"))) return "cannot check whether git tracks .kickoff/lessons-candidates.md (" + (r.error ? r.error.code : (r.stderr || "").trim().split("\n")[0]) + "); fix git access, then retro again";
     if (dirname(d) === d) return null; // no repo above: nothing to publish

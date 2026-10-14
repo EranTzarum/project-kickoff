@@ -152,6 +152,8 @@ test("when git cannot be asked inside a repo, the draft is refused; outside any 
   const repo = mkdtempSync(join(tmpdir(), "retro-nogit-"));
   mkdirSync(join(repo, ".git"));
   assert.match(draftTrackedReason(repo, "git-binary-that-does-not-exist"), /cannot check/);
+  // An empty .git makes real git answer "not a git repository": still refused, since .git exists.
+  assert.match(draftTrackedReason(repo), /cannot check/);
   rmSync(repo, { recursive: true, force: true });
   const plain = mkdtempSync(join(tmpdir(), "retro-plain-"));
   assert.equal(draftTrackedReason(plain), null);
