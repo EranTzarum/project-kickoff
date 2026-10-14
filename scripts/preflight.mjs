@@ -5,6 +5,8 @@
 //   env:        keys in .env.example ⊆ keys in docs/ENV_MATRIX.md and vice versa
 //   migrations: every created table has RLS enabled; every created function has a revoke from anon;
 //               no two migration files share a prefix
+//   env-tiers:  real-user databases must not be shared with disposable tiers; no tier is both
+//   line-endings: shell scripts must be LF; .gitattributes must pin *.sh eol=lf when .sh files exist
 // Prints one line per stage and per failed cross-check. Exit 0 always, except --strict with any
 // MISSING/CHECK line → exit 1 (for CI). CRLF-tolerant. No dependencies.
 import { readFileSync, existsSync, statSync, readdirSync, appendFileSync } from "node:fs";
@@ -102,6 +104,79 @@ if (existsSync(migDir)) {
       const fn = m[1];
       if (!new RegExp(`revoke\\s+(?:execute|all)\\s+on\\s+function\\s+(?:public\\.)?"?${fn}"?[^;]*\\bfrom\\b[^;]*\\b(anon|public)\\b`).test(sql)) { problems++; console.log(`CHECK migrations: ${f} creates function ${fn}() without a revoke from anon/public`); }
     }
+  }
+}
+
+// ---- cross-check: environment tiers (docs/ENV_MATRIX.md or adopt-mapped path) ----
+const skipDb = new Set(["-", "local", "none", "n/a", ""]);
+const yes = (v) => v === "yes";
+if (existsSync(join(root, envMatrix))) {
+  const norm = read(envMatrix);
+  const sec = norm.indexOf("## Environment tiers");
+  if (sec >= 0) {
+    const tiers = [];
+    for (const line of norm.slice(sec).split("\n")) {
+      if (line.startsWith("## ") && tiers.length) break;
+      if (!line.startsWith("|")) continue;
+      const cells = line.slice(1, -1).split("|").map((c) => c.trim());
+      if (!cells[0] || cells[0] === "Tier" || /^-+$/.test(cells[0])) continue;
+      if (cells.length < 8) continue;
+      tiers.push({ name: cells[0], db: cells[3], real: cells[6], disp: cells[7] });
+    }
+    if (tiers.length) {
+      for (const t of tiers) {
+        if (yes(t.real) && yes(t.disp)) {
+          problems++;
+          console.log(`CHECK env-tiers: tier ${t.name} is marked both real users and disposable`);
+        }
+      }
+      const byDb = new Map();
+      for (const t of tiers) {
+        if (skipDb.has(t.db)) continue;
+        if (!byDb.has(t.db)) byDb.set(t.db, []);
+        byDb.get(t.db).push(t);
+      }
+      for (const [db, group] of byDb) {
+        const real = group.filter((t) => yes(t.real));
+        const disp = group.filter((t) => yes(t.disp));
+        for (const r of real) {
+          for (const d of disp) {
+            if (r.name === d.name) continue;
+            problems++;
+            console.log(`CHECK env-tiers: database ${db} holds real users (${r.name}) and is shared with disposable tier ${d.name}`);
+          }
+        }
+      }
+    }
+  }
+}
+
+// ---- cross-check: shell line endings ----
+const readRaw = (p) => readFileSync(join(root, p), "utf8");
+const shellScripts = [];
+const walkSh = (dir, depth) => {
+  for (const e of readdirSync(join(root, dir))) {
+    if (e === "node_modules" || e === ".git") continue;
+    const rel = dir === "." ? e : `${dir}/${e}`;
+    const full = join(root, rel);
+    if (statSync(full).isDirectory()) {
+      if (depth < 4) walkSh(rel, depth + 1);
+    } else if (e.endsWith(".sh") || e.endsWith(".bash")) {
+      shellScripts.push(rel);
+      if (readRaw(rel).includes("\r\n")) {
+        problems++;
+        console.log(`CHECK line-endings: ${rel} has CRLF line endings; it fails on Linux`);
+      }
+    }
+  }
+};
+walkSh(".", 1);
+if (shellScripts.length) {
+  const ga = join(root, ".gitattributes");
+  const gaText = existsSync(ga) ? readRaw(".gitattributes").replace(/\r\n/g, "\n") : "";
+  if (!/^\*\.sh\s+.*eol=lf/m.test(gaText)) {
+    problems++;
+    console.log("CHECK line-endings: .gitattributes has no \"*.sh text eol=lf\" rule");
   }
 }
 
