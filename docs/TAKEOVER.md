@@ -10,18 +10,19 @@ manager in the app sidebar. It works **only inside `project-kickoff/`**: edits, 
 happen in this repo. The umbrella files (`AGENTS.md`, `README.md`, `docs/`) belong to the manager
 session; ask it to update the project-kickoff rows after a big change.
 
-## State (2026-10-14, `main` @ `1ac2b68`)
+## State (2026-10-14, `main` @ `ad1c292`)
 
 - **Repo:** public, `main` only. Installed for Claude Code through a junction in
   `~/.claude/skills/project-kickoff`. Codex and Cursor get **copies** (Windows and WSL) in
   `~/.codex/skills/project-kickoff` and `~/.cursor/skills/project-kickoff`. Windows copies synced
-  at `1ac2b68`; WSL copies not synced since before v2.
+  at `ad1c292`; WSL copies not synced since before v2.
 - **What it does:** staged pre-flight (six batched questionnaires), `render.mjs` renders docs, guardrail
   hooks, CI and `.gitattributes`; `preflight.mjs` gives advisory checks (`--strict` for CI); `adopt.mjs` adopts
   an existing repo; `log.mjs` + `measure.mjs` keep and read an event ledger; `owner-steps.mjs` formats and
   lints owner steps; `docs/LAUNCH.md` lists owner-only blockers from day 1; `to-crew.mjs` exports a feature's tickets to `crew.json`, `build-route.mjs`
-  detects Crew and logs the chosen route. 107 lessons.
-- **Gate:** 12 test files, 97 tests, all passing at `1ac2b68`; public leak check clean.
+  detects Crew and logs the chosen route; `lessons.mjs --lint` checks the lessons; `retro.mjs` drafts candidate
+  lessons from a project and keeps the user's own store. 108 lessons, each with a source and a class.
+- **Gate:** 14 test files, 112 tests, plus `lessons.mjs --lint`, all passing at `ad1c292`; public leak check clean.
 
 ## Open items, best first
 
@@ -41,16 +42,19 @@ pr-gate, merge only on the owner's `merge`.
    Not in P4: the stage 2 AI-cost question — no field evidence yet; add it with a lesson when a project supplies one.
 5. **P5 Build alone or with Crew** — merged (#14): ticket front matter, `to-crew.mjs` (tickets to `crew.json`,
    gates as `validate`, refuses a `main` base), `build-route.mjs` + `build_route` event, stage 6 build-route step. L107.
-6. **P6 Learn across projects — NEXT.** lesson `source` + `class` columns, `retro` mode, a user-level lesson store,
-   community lessons by PR; a rule needs 2+ projects.
-7. **P7 Opt-in telemetry + profiles** — known limit from P2: the generated CI installs Python dependencies
+6. **P6 Learn across projects** — merged (#15): lesson `source` + `class` columns and `## Sources`, `lessons.mjs --lint`
+   in the gate, `retro.mjs` (draft from STATE.md + ledger, `--save` to `~/.project-kickoff/lessons.jsonl`, `--list` read
+   at stage 0), `CONTRIBUTING.md`. L108. Seven review rounds, all after round 1 on one check: never overwrite a
+   draft git tracks. Open option: write the draft into the user store instead of `.kickoff/`, which removes that
+   whole class of failure.
+7. **P7 Opt-in telemetry + profiles — NEXT.** known limit from P2: the generated CI installs Python dependencies
    with `pip install -r requirements.txt` or `pip install -e ".[dev]"`; a Poetry/uv/PDM dev group is not
    installed, so a `python -m pytest` gate fails there. The Python profile must pick the dependency manager.
    Then: kickoff's own backend (off by default, show before send, numbers only);
    `python-fastapi-nextjs` and `single-vm-caddy` profiles; README speed promise only after measured ledgers.
    Owner action first: a telemetry backend project.
 
-## How P2–P5 were built (repeat for P6–P7)
+## How P2–P6 were built (repeat for P7)
 
 - The Factory's crew skill: a feature branch `feature/<slug>` from `main`, `crew init` (then set
   `base_branch` to the feature branch — init writes `main`), three briefs under `.scratch/<slug>/issues/`
@@ -61,6 +65,8 @@ pr-gate, merge only on the owner's `merge`.
   `.git/info/exclude`).
 - Seats that passed first try: agy `claude-opus-5-5-medium` (largest ticket), cursor `composer-2.5` (small
   scripts), claude `sonnet` medium (docs). Cursor is found as `cursor-agent`.
+- **Run the gate as its own step before a commit.** A `gate && commit` chain whose filter swallows the exit
+  code pushed a red commit once (P6).
 - **An accept command must fail when its test file is missing.** `node --test <missing file> <other file>` runs
   the rest and exits 0: in P5 the agy worker hit its quota (429) before writing its tests and the ticket still
   went DONE. Add `node -e "require('fs').statSync('<file>')"` to `accept` for every new test file.
