@@ -47,7 +47,9 @@ export function formatSteps(steps, { heading = "## What you need to do" } = {}) 
     lines.push(`${i + 1}. **Where:** ${step.place}`);
     lines.push(`   **Do:** ${step.action}`);
     if (nonEmpty(step.value)) {
-      lines.push("   ```", `   ${step.value}`, "   ```");
+      // Every line of the value sits inside the block; a longer fence is used if the value holds ```.
+      const fence = step.value.includes("```") ? "````" : "```";
+      lines.push(`   ${fence}`, ...step.value.split(/\r?\n/).map((l) => `   ${l}`), `   ${fence}`);
     }
     lines.push(`   **You should see:** ${step.expect}`);
     if (step.irreversible) lines.push("   **Can't be undone.**");

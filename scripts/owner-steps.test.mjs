@@ -128,3 +128,10 @@ test("CLI: JSON to markdown, validation exit 1, lint good and bad files", () => 
   assert.equal(run([]).status, 1);
   rmSync(dir, { recursive: true, force: true });
 });
+
+test("a multi-line value stays inside its code block, and a value holding ``` gets a longer fence", () => {
+  const md = formatSteps([{ place: "Terminal", action: "Run these", value: "line one\nline two", expect: "Both run" }]);
+  assert.match(md, /   ```\n   line one\n   line two\n   ```/);
+  const fenced = formatSteps([{ place: "Docs", action: "Paste", value: "```js\nx\n```", expect: "Pasted" }]);
+  assert.match(fenced, /   ````\n   ```js\n   x\n   ```\n   ````/);
+});

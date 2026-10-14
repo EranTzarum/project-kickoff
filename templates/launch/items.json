@@ -4,7 +4,7 @@
     "unblocks": "every other signup below; recovery when a sign-in lockout hits on day 1",
     "verified": false,
     "steps": [
-      { "place": "Your email provider → Create account", "action": "Create a business email used only for this project's services.", "value": "ops@example.com", "expect": "The new inbox receives a welcome message." },
+      { "place": "Your email provider → Create account", "action": "Create a business email used only for this project's services.", "value": "ops (at) your-domain", "expect": "The new inbox receives a welcome message." },
       { "place": "That account → Security → Passkeys", "action": "Add a passkey on your own device, before many sign-in attempts can lock the new account.", "expect": "The passkey is listed under sign-in methods." },
       { "place": "That account → Security → Backup codes", "action": "Generate backup codes and store them offline (printed or in a password manager).", "expect": "The page shows the codes were generated, with a date." },
       { "place": "That account → Security → Recovery email", "action": "Add a recovery email you already control and confirm it.", "expect": "The recovery email shows as verified." }
@@ -25,7 +25,7 @@
     "unblocks": "the production URL, auth redirect URLs and mail sender verification",
     "verified": false,
     "steps": [
-      { "place": "Domain registrar → Search domains", "action": "Buy the production domain with the owner account.", "value": "example.com", "expect": "The domain is listed under your domains with an expiry date and auto-renew on." },
+      { "place": "Domain registrar → Search domains", "action": "Buy the production domain with the owner account.", "value": "example.com", "expect": "The domain is listed under your domains with an expiry date and auto-renew on.", "irreversible": true },
       { "place": "Domain registrar → DNS records", "action": "Add the records your hosting provider and mail provider list for this domain.", "expect": "Each record appears in the DNS records table." },
       { "place": "Hosting provider → Project → Domains", "action": "Add the domain and wait for verification.", "expect": "The domain shows as verified with a valid certificate." }
     ]
@@ -65,7 +65,7 @@
     "steps": [
       { "place": "Mail provider → Domains → Add domain", "action": "Add the sending domain and copy its DNS records into Domain registrar → DNS records.", "value": "mail.example.com", "expect": "The mail provider shows the domain as verified." },
       { "place": "Mail provider → API keys or SMTP credentials", "action": "Create SMTP credentials for the auth service.", "expect": "A host, port, username and password are shown once; save them in your secret store." },
-      { "place": "Auth provider → Settings → SMTP", "action": "Enable custom SMTP with those credentials before the first real invite; the built-in mailer is rate-limited or team-only.", "value": "no-reply@mail.example.com", "expect": "A test invite to an address outside the team arrives within a minute." }
+      { "place": "Auth provider → Settings → SMTP", "action": "Enable custom SMTP with those credentials before the first real invite; the built-in mailer is rate-limited or team-only.", "value": "no-reply (at) mail.your-domain", "expect": "A test invite to an address outside the team arrives within a minute." }
     ]
   },
   {

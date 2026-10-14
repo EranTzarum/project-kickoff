@@ -78,3 +78,14 @@ test("a full render passes preflight --strict", () => {
   assert.match(p.stdout, /STAGE 0 INTAKE: READY/);
   rmSync(dir, { recursive: true, force: true });
 });
+
+test("buying the domain is marked as can't be undone", () => {
+  const items = JSON.parse(readFileSync(join(here, "../templates/launch/items.json"), "utf8"));
+  const buy = items.find((i) => i.id === "domain-dns").steps.find((st) => /^Buy /.test(st.action));
+  assert.equal(buy.irreversible, true);
+});
+
+test("the catalog holds no email addresses (the public repo's leak check rejects them)", () => {
+  const raw = readFileSync(join(here, "../templates/launch/items.json"), "utf8");
+  assert.doesNotMatch(raw, /[\w.+-]+@[\w-]+\.[\w.]+/);
+});
