@@ -39,6 +39,7 @@ never as zero.
 | gate pass rate | the share of `gate_run` rows with `failed = 0` |
 | regenerations | the count of `regenerate` events (rework on a deliverable) |
 | blockers | the count of `blocker` events |
+| rows ignored | rows that do not match their event's schema (the same check `log.mjs` applies when writing); left out of every metric, never guessed |
 
 ## Baseline
 

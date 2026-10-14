@@ -5,11 +5,14 @@
 import { readFileSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { isValidRow } from "./log.mjs";
 
 const DAY = 86400000;
 const days = (ms) => Math.round((ms / DAY) * 10) / 10;
 
-export function measure(rows) {
+export function measure(allRows) {
+  // Only rows that match the writer's schema (log.mjs) count; a hand-edited or broken row is left out, not guessed.
+  const rows = allRows.filter((r) => isValidRow(r) && !Number.isNaN(Date.parse(r.ts)));
   const t = (r) => Date.parse(r.ts);
   const of = (e) => rows.filter((r) => r.event === e);
   const first = rows.length ? Math.min(...rows.map(t)) : null;
@@ -23,17 +26,16 @@ export function measure(rows) {
   }
 
   // Owner actions: open → done by id; still-open ones report their age.
-  // Rows without a valid id or count (a hand-edited ledger) are left out, not guessed.
-  const hasId = (r) => typeof r.id === "string" && r.id.trim() !== "";
-  const opened = of("owner_action_open").filter(hasId), closed = new Map(of("owner_action_done").filter(hasId).map((r) => [r.id, r]));
+  const opened = of("owner_action_open"), closed = new Map(of("owner_action_done").map((r) => [r.id, r]));
   const now = Date.now();
   const actions = opened.map((r) => ({ id: r.id, days: days((closed.has(r.id) ? t(closed.get(r.id)) : now) - t(r)), open: !closed.has(r.id) }));
 
   const openDays = actions.filter((a) => a.open).map((a) => a.days);
-  const gates = of("gate_run").filter((g) => Number.isInteger(g.failed));
+  const gates = of("gate_run");
   const pilot = of("pilot")[0];
   return {
     events: rows.length,
+    rows_ignored: allRows.length - rows.length,
     idea_to_pilot_days: first !== null && pilot ? days(t(pilot) - first) : null,
     stage_days: stages,
     owner_actions: { total: actions.length, open: openDays.length, oldest_open_days: openDays.length ? Math.max(...openDays) : null, list: actions },

@@ -28,8 +28,11 @@ export const SCHEMA = {
 };
 export const EVENTS = Object.keys(SCHEMA);
 
+// True when a ledger row matches its event's schema (used by measure.mjs on read).
+export const isValidRow = (r) => !!r && Object.hasOwn(SCHEMA, r.event) && Object.entries(SCHEMA[r.event]).every(([k, ok]) => ok(r[k]));
+
 export function validate(event, fields) {
-  if (!(event in SCHEMA)) throw new Error(`unknown event ${event}; one of: ${EVENTS.join(", ")}`);
+  if (!Object.hasOwn(SCHEMA, event)) throw new Error(`unknown event ${event}; one of: ${EVENTS.join(", ")}`);
   for (const [k, ok] of Object.entries(SCHEMA[event])) {
     if (!ok(fields[k])) throw new Error(`${event} needs a valid ${k} (got ${JSON.stringify(fields[k])})`);
   }

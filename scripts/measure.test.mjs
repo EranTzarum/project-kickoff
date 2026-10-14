@@ -66,7 +66,7 @@ test("log.mjs appends manual events and rejects unknown ones", () => {
 
 test("log.mjs rejects rows missing their required fields, and appends nothing", () => {
   const dir = mkdtempSync(join(tmpdir(), "measure-"));
-  for (const args of [["owner_action_open"], ["owner_action_done", "--id", " "], ["stage_start"], ["stage_start", "--stage", "x"], ["stage_start", "--stage", "9"]]) {
+  for (const args of [["toString"], ["constructor"], ["__proto__"], ["owner_action_open"], ["owner_action_done", "--id", " "], ["stage_start"], ["stage_start", "--stage", "x"], ["stage_start", "--stage", "9"]]) {
     assert.equal(run("log.mjs", [dir, ...args]).status, 1, args.join(" "));
   }
   assert.deepEqual(ledger(dir), []);
@@ -102,13 +102,13 @@ test("measure: stage days, pilot, owner actions, gate pass rate; missing data is
   const rows = [
     { ts: at(0), event: "stage_start", stage: 0 },
     { ts: at(1), event: "stage_ready", stage: 0 },
-    { ts: at(1), event: "render", stage: 1 },
+    { ts: at(1), event: "render", stage: 1, files: 1 },
     { ts: at(3.5), event: "stage_ready", stage: 1 },
     { ts: at(0), event: "owner_action_open", id: "billing" },
     { ts: at(2), event: "owner_action_done", id: "billing" },
     { ts: at(4), event: "gate_run", passed: 4, failed: 0 },
     { ts: at(5), event: "gate_run", passed: 3, failed: 1 },
-    { ts: at(5), event: "regenerate", stage: 1 },
+    { ts: at(5), event: "regenerate", stage: 1, files: 1 },
     { ts: at(12), event: "pilot" },
   ];
   const m = measure(rows);
@@ -120,9 +120,15 @@ test("measure: stage days, pilot, owner actions, gate pass rate; missing data is
   assert.equal(m.owner_actions.list[0].days, 2);
   assert.equal(m.gate_pass_rate, 0.5);
   assert.equal(m.regenerations, 1);
-  const bad = measure([{ ts: at(0), event: "owner_action_open" }, { ts: at(1), event: "owner_action_done" }, { ts: at(1), event: "gate_run" }]);
+  const bad = measure([
+    { ts: at(0), event: "owner_action_open" }, { ts: at(1), event: "owner_action_done" },
+    { ts: at(1), event: "gate_run" }, { ts: at(1), event: "gate_run", failed: 0 }, { ts: at(1), event: "gate_run", passed: 2, failed: -1 },
+    { ts: at(1), event: "toString" }, { ts: "not a date", event: "pilot" },
+  ]);
   assert.equal(bad.owner_actions.total, 0, "rows without an id are left out");
-  assert.equal(bad.gate_pass_rate, null, "a gate_run without counts is not a failure");
+  assert.equal(bad.gate_pass_rate, null, "gate rows without both non-negative counts are left out");
+  assert.equal(bad.idea_to_pilot_days, null);
+  assert.equal(bad.rows_ignored, 7);
   const empty = measure([]);
   assert.equal(empty.idea_to_pilot_days, null);
   assert.equal(empty.gate_pass_rate, null);
