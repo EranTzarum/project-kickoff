@@ -1,7 +1,7 @@
 // node --test scripts/render-mapping.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -20,24 +20,61 @@ function withAdoptMapping(dir, mapped) {
   writeFileSync(join(dir, ".kickoff/adopt.json"), JSON.stringify({ v: 1, mapped }));
 }
 
+// Name-exact existence check, so the test means the same on case-insensitive and case-sensitive filesystems.
+const hasExact = (dir, rel) => readdirSync(join(dir, dirname(rel))).includes(rel.split("/").pop());
+
 test("adopt mapping skips deliverable and leaves mapped file unchanged", () => {
   const dir = tmp();
-  mkdirSync(join(dir, "docs"), { recursive: true });
   const existing = "EXISTING ARCH DOC\n";
-  writeFileSync(join(dir, "docs/architecture.md"), existing);
-  withAdoptMapping(dir, { "docs/ARCHITECTURE.md": "docs/architecture.md" });
+  writeFileSync(join(dir, "ARCHITECTURE.md"), existing);
+  withAdoptMapping(dir, { "docs/ARCHITECTURE.md": "ARCHITECTURE.md" });
 
-  const r = render(dir, "--stage", "2");
-  assert.equal(r.status, 0, r.stderr);
-  assert.match(r.stdout, /skip\s+docs\/ARCHITECTURE\.md \(mapped to docs\/architecture\.md\)/);
-  assert.equal(readFileSync(join(dir, "docs/architecture.md"), "utf8"), existing);
-  assert.equal(readFileSync(join(dir, "docs/ARCHITECTURE.md"), "utf8"), existing);
+  for (const extra of [[], ["--force"]]) {
+    const r = render(dir, "--stage", "2", ...extra);
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /skip\s+docs\/ARCHITECTURE\.md \(mapped to ARCHITECTURE\.md\)/);
+    assert.equal(readFileSync(join(dir, "ARCHITECTURE.md"), "utf8"), existing);
+    assert.equal(existsSync(join(dir, "docs")) && hasExact(dir, "docs/ARCHITECTURE.md"), false, "no parallel doc");
+  }
+  rmSync(dir, { recursive: true, force: true });
+});
 
-  const forced = render(dir, "--stage", "2", "--force");
-  assert.equal(forced.status, 0, forced.stderr);
-  assert.match(forced.stdout, /skip\s+docs\/ARCHITECTURE\.md \(mapped to docs\/architecture\.md\)/);
-  assert.equal(readFileSync(join(dir, "docs/architecture.md"), "utf8"), existing);
-  assert.equal(readFileSync(join(dir, "docs/ARCHITECTURE.md"), "utf8"), existing);
+test("adopted repo: dropped rows, the manifest and mapped paths are respected by a full render, also with --force", () => {
+  const dir = tmp();
+  writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "demo-api", scripts: { test: "x" } }));
+  writeFileSync(join(dir, "PROGRESS.md"), "# progress\n");
+  writeFileSync(join(dir, ".env.sample"), "API_KEY=\n");
+  const adopt = spawnSync(process.execPath, [join(here, "adopt.mjs"), dir, "--write"], { encoding: "utf8" });
+  assert.equal(adopt.status, 0, adopt.stderr);
+  const manifest = readFileSync(join(dir, "docs/KICKOFF.md"), "utf8");
+
+  for (const extra of [[], ["--force"]]) {
+    const r = render(dir, ...extra);
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /skip\s+docs\/KICKOFF\.md \(written by adopt/);
+    assert.equal(readFileSync(join(dir, "docs/KICKOFF.md"), "utf8"), manifest, "manifest kept");
+    for (const f of ["supabase/migrations/_TEMPLATE.sql", "scripts/db-types.mjs", ".claude/agents/rls-auditor.md"]) {
+      assert.equal(existsSync(join(dir, f)), false, `${f} is not used without Supabase`);
+    }
+    assert.ok(existsSync(join(dir, ".claude/hooks/service-role-guard.js")), "settings.json still wires the guard");
+    assert.equal(existsSync(join(dir, "STATE.md")), false, "no parallel state file");
+    assert.equal(existsSync(join(dir, ".env.example")), false, "no parallel env template");
+  }
+  const rules = readFileSync(join(dir, "AGENTS.md"), "utf8");
+  assert.match(rules, /`PROGRESS\.md`/, "rendered docs point at the adopted file");
+  assert.doesNotMatch(rules, /`STATE\.md`/);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("preflight env cross-check reads the adopted env files", () => {
+  const dir = tmp();
+  writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "demo-api" }));
+  mkdirSync(join(dir, "docs"), { recursive: true });
+  writeFileSync(join(dir, "docs/environments.md"), "| KEY | Purpose |\n|---|---|\n| API_KEY | x |\n");
+  writeFileSync(join(dir, ".env.sample"), "API_KEY=\nEXTRA_KEY=\n");
+  assert.equal(spawnSync(process.execPath, [join(here, "adopt.mjs"), dir, "--write"], { encoding: "utf8" }).status, 0);
+  const r = preflight(dir);
+  assert.match(r.stdout, /CHECK env: \.env\.sample key EXTRA_KEY not in docs\/environments\.md/);
   rmSync(dir, { recursive: true, force: true });
 });
 

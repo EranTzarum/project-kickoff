@@ -93,15 +93,15 @@ for (const [k, v] of Object.entries(a)) {
   if (typeof v === "string" || typeof v === "number") values[key] = String(v);
 }
 
-const render = (text) => text.replace(/\{\{([A-Z0-9_]+)\}\}/g, (m, k) => (k in values ? values[k] : m));
-
-let adoptMapped = {};
+let adoptMapped = {}, adoptExcluded = [], adopted = false;
 const adoptPath = join(root, ".kickoff/adopt.json");
 if (existsSync(adoptPath)) {
   try {
     const adopt = JSON.parse(readFileSync(adoptPath, "utf8"));
     if (adopt.mapped !== null && typeof adopt.mapped === "object" && !Array.isArray(adopt.mapped)) {
-      adoptMapped = adopt.mapped;
+      adoptMapped = Object.fromEntries(Object.entries(adopt.mapped).filter(([, v]) => typeof v === "string" && v));
+      adoptExcluded = Array.isArray(adopt.excluded) ? adopt.excluded.filter((v) => typeof v === "string") : [];
+      adopted = true;
     } else {
       console.log("NOTE adopt.json: ignored (mapped is not an object)");
     }
@@ -110,6 +110,13 @@ if (existsSync(adoptPath)) {
   }
 }
 
+// Rendered text points at the repo's own documents: every mapped deliverable path is replaced by the
+// path adopt found, matched as a whole path so `STATE.md` never rewrites `docs/STATE.md`.
+const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const mapPaths = (text) => Object.entries(adoptMapped)
+  .reduce((t, [from, to]) => t.replace(new RegExp(`(?<![\\w./-])${esc(from)}(?![\\w/-])`, "g"), to), text);
+const render = (text) => mapPaths(text.replace(/\{\{([A-Z0-9_]+)\}\}/g, (m, k) => (k in values ? values[k] : m)));
+
 let written = 0, skipped = 0;
 const writtenByStage = {};
 for (const [stage, files] of Object.entries(STAGE_FILES)) {
@@ -117,11 +124,10 @@ for (const [stage, files] of Object.entries(STAGE_FILES)) {
   writtenByStage[stage] = 0;
   for (const [src, dst] of files) {
     const mappedTo = adoptMapped[dst];
-    if (typeof mappedTo === "string" && mappedTo) {
-      console.log(`skip   ${dst} (mapped to ${mappedTo})`);
-      skipped++;
-      continue;
-    }
+    if (mappedTo) { console.log(`skip   ${dst} (mapped to ${mappedTo})`); skipped++; continue; }
+    // adopt owns the manifest and the rows it dropped for this stack; --force does not override either.
+    if (adopted && dst === "docs/KICKOFF.md") { console.log(`skip   ${dst} (written by adopt; re-run adopt --write --force)`); skipped++; continue; }
+    if (adoptExcluded.includes(dst)) { console.log(`skip   ${dst} (not used by this stack)`); skipped++; continue; }
     const target = join(root, dst);
     if (existsSync(target) && !force) { console.log(`skip   ${dst} (exists)`); skipped++; continue; }
     mkdirSync(dirname(target), { recursive: true });

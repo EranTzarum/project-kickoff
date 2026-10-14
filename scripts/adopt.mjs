@@ -74,19 +74,20 @@ const ALIASES = {
   ".github/workflows/gates.yml": workflows.slice(0, 1).map((f) => `.github/workflows/${f}`),
 };
 const SUPABASE_ROWS = ["supabase/migrations/_TEMPLATE.sql", "supabase/migrations/00000000000000_auth_hook.sql",
-  "scripts/db-types.mjs", ".claude/hooks/service-role-guard.js", ".claude/agents/rls-auditor.md"];
+  "scripts/db-types.mjs", ".claude/agents/rls-auditor.md"];
+// service-role-guard.js stays: .claude/settings.json wires it in, and it only warns.
 
 const tplPath = join(here, "../templates/docs/KICKOFF.md");
 const tpl = readFileSync(tplPath, "utf8");
 const eol = tpl.includes("\r\n") ? "\r\n" : "\n";
 const ROW = /^(\|[^|]*\|\s*`)([^`]+)(`\s*\|.*)$/;
-const present = [], mapped = {}, out = [];
+const present = [], mapped = {}, excluded = [], out = [];
 for (const line of tpl.split(/\r?\n/)) {
   const m = line.match(ROW);
   if (!m) { out.push(line); continue; }
   const p = m[2];
   if (p === "docs/KICKOFF.md") { out.push(line); if (find(p, false)) present.push(p); continue; }
-  if (!hasSupabase && SUPABASE_ROWS.includes(p)) continue;
+  if (!hasSupabase && SUPABASE_ROWS.includes(p)) { excluded.push(p); continue; }
   // Exact path first, then aliases and the path itself case-insensitively; one entry per real file.
   const hits = [];
   for (const real of [find(p, false), ...(ALIASES[p] ?? []).map((a) => find(a, true)), find(p, true)]) {
@@ -156,7 +157,7 @@ const manifest = out.join(eol)
 mkdirSync(join(root, "docs"), { recursive: true });
 writeFileSync(join(root, "docs/KICKOFF.md"), manifest);
 mkdirSync(join(root, ".kickoff"), { recursive: true });
-writeFileSync(join(root, ".kickoff/adopt.json"), JSON.stringify({ v: 1, mapped, stack, profile, gaps: sorted }, null, 2) + "\n");
+writeFileSync(join(root, ".kickoff/adopt.json"), JSON.stringify({ v: 1, mapped, excluded, stack, profile, gaps: sorted }, null, 2) + "\n");
 console.log("WROTE docs/KICKOFF.md, .kickoff/adopt.json");
 try { logEvent(root, "adopt", { mapped: Object.keys(mapped).length, gaps: sorted.length }); }
 catch (e) { console.log(`NOTE ledger: ${e.message}`); }

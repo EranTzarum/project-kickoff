@@ -29,7 +29,7 @@ the checker. The rest are rendered.
 Exactly two files, and no other:
 
 - `docs/KICKOFF.md` — the manifest. Its rows point at the repo's existing documents.
-- `.kickoff/adopt.json` — `{ v, mapped, stack, profile, gaps }`.
+- `.kickoff/adopt.json` — `{ v, mapped, excluded, stack, profile, gaps }`.
 
 It also logs an `adopt` event to the ledger (`docs/METRICS.md`). It never edits an existing document,
 config or script.
@@ -40,6 +40,7 @@ config or script.
 |---|---|
 | `v` | schema version |
 | `mapped` | deliverable → existing path, for every `MAP` line |
+| `excluded` | deliverables dropped for this stack (the Supabase-only rows when Supabase is absent) |
 | `stack` | the detected stack |
 | `profile` | the stack profile name |
 | `gaps` | the gap lines, each with its risk |
@@ -60,7 +61,9 @@ The deliverable is on the left. The first existing file in the list wins.
 | `.github/workflows/gates.yml` | the first existing workflow file |
 
 Two candidates for one deliverable: it picks the first and reports a medium `conflict` gap.
-Rows that only apply to Supabase are dropped when Supabase is not detected.
+Rows that only apply to Supabase (migration template, auth hook, `scripts/db-types.mjs`, the RLS auditor) are
+dropped when Supabase is not detected and listed in `excluded`. `service-role-guard.js` stays: `.claude/settings.json`
+wires it in, and it only warns.
 
 ## Gaps by risk
 
@@ -81,6 +84,13 @@ list it under "Owner actions" and log it with `log.mjs`.
 
 ## How render and preflight use it
 
-- `render.mjs` reads `.kickoff/adopt.json` and never writes a deliverable listed in `mapped`, even with
-  `--force`. It prints `skip <path> (mapped to <existing>)`.
-- `preflight.mjs` treats a mapped deliverable as present.
+- `render.mjs` reads `.kickoff/adopt.json`. Even with `--force` it never writes:
+  - a deliverable listed in `mapped` (prints `skip <path> (mapped to <existing>)`);
+  - a deliverable listed in `excluded` (prints `skip <path> (not used by this stack)`);
+  - `docs/KICKOFF.md`, which adopt owns; re-run `adopt --write --force` to rebuild it.
+- Everything `render.mjs` does write points at the adopted files: a mapped path such as `STATE.md` becomes
+  `PROGRESS.md` in the rendered text.
+- `preflight.mjs` treats a mapped deliverable as present, and its env check compares the adopted env
+  template with the adopted env matrix (for example `.env.sample` with `docs/environments.md`).
+- The env guard hook allows edits to every env template name: `.env.example`, `.env.sample`,
+  `.env.template`, `.env.dist`.

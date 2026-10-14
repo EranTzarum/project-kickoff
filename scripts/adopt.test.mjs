@@ -80,7 +80,8 @@ test("bare repo: high no-gates and no-ci, low missing gaps; template paths kept,
   assert.match(manifest, /`docs\/ARCHITECTURE\.md`/);
   assert.match(manifest, /`docs\/MIGRATION_RUNBOOK\.md`/);
   assert.match(manifest, /# add your gate commands here/);
-  for (const p of ["_TEMPLATE.sql", "auth_hook.sql", "db-types.mjs", "service-role-guard.js", "rls-auditor.md"]) assert.ok(!manifest.includes(p), p);
+  for (const p of ["_TEMPLATE.sql", "auth_hook.sql", "db-types.mjs", "rls-auditor.md"]) assert.ok(!manifest.includes(p), p);
+  assert.ok(manifest.includes("service-role-guard.js"), "the guard stays: settings.json wires it");
   rmSync(dir, { recursive: true, force: true });
 });
 
