@@ -80,7 +80,7 @@ test("existing crew.json keeps its frame; tickets are merged", (t) => {
 
 test("errors exit 1 and write nothing", async (t) => {
   const cases = {
-    "base main": { args: ["--base", "main"], expect: /base branch must be a feature branch, not main; create one first: git switch -c feature\/inv/ },
+    "base main": { args: ["--base", "main"], expect: /base branch must be a feature branch, not main; create one first \(git switch -c feature\/inv\)/ },
     "no constraints": { setup: (r) => writeFileSync(join(r, ".tickets", "inv-1.md"), ticket({ id: "inv-1", body: "# t\nnothing\n" })), expect: /CONSTRAINTS/ },
     "brief over 8000": { setup: (r) => writeFileSync(join(r, ".tickets", "inv-1.md"), ticket({ id: "inv-1", body: "## CONSTRAINTS\n" + "x".repeat(8000) })), expect: /8000/ },
     "unknown key": { setup: (r) => writeFileSync(join(r, ".tickets", "inv-1.md"), ticket({ id: "inv-1", extra: "colour: red\n" })), expect: /colour/ },
@@ -129,4 +129,22 @@ test("tickets are in natural order: inv-2 before inv-10", (t) => {
   writeFileSync(join(root, ".tickets", "inv-10.md"), ticket({ id: "inv-10" }));
   const dag = buildDag(root, "inv", { base: "feature/inv" });
   assert.deepEqual(dag.tickets.map((x) => x.id), ["inv-1", "inv-2", "inv-10"]);
+});
+
+test("an existing crew.json on main is refused and left unchanged", (t) => {
+  const root = fixture(t);
+  const before = JSON.stringify({ schema_version: 1, repo: root, slug: "inv", base_branch: "main", validate: ["echo ok"], tickets: [] });
+  writeFileSync(join(root, "crew.json"), before);
+  const r = cli(root);
+  assert.equal(r.status, 1, r.stdout);
+  assert.match(r.stderr, /not main; .*set base_branch in crew\.json/);
+  assert.equal(readFileSync(join(root, "crew.json"), "utf8"), before);
+});
+
+test("a feature name does not pick up another feature that shares its prefix", (t) => {
+  const root = fixture(t);
+  writeFileSync(join(root, ".tickets", "inv-export-1.md"), ticket({ id: "inv-export-1" }));
+  writeFileSync(join(root, ".tickets", "inv-notes.md"), ticket({ id: "inv-notes" }));
+  const dag = buildDag(root, "inv", { base: "feature/inv" });
+  assert.deepEqual(dag.tickets.map((x) => x.id), ["inv-1", "inv-2"]);
 });

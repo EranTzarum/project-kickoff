@@ -103,7 +103,7 @@ function build(root, feature, { base, existing } = {}) {
   const dir = join(root, ".tickets");
   const files = existsSync(dir)
     ? readdirSync(dir)
-        .filter((f) => f.startsWith(`${feature}-`) && f.endsWith(".md"))
+        .filter((f) => f.startsWith(`${feature}-`) && /^\d+\.md$/.test(f.slice(feature.length + 1)))
         .sort((a, b) => a.localeCompare(b, "en", { numeric: true }))
     : [];
   if (!files.length) throw new Error(`no tickets: .tickets/${feature}-*.md`);
@@ -127,10 +127,12 @@ function build(root, feature, { base, existing } = {}) {
     dag = { ...existing, tickets: [...(existing.tickets || [])] };
   } else {
     const branch = base || execFileSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
-    if (["main", "master", "HEAD"].includes(branch))
-      throw new Error(`base branch must be a feature branch, not ${branch}; create one first: git switch -c feature/${feature}`);
     dag = { schema_version: 1, repo: root, slug: feature, base_branch: branch, validate: [], tickets: [] };
   }
+  // Checked on the final DAG: an existing crew.json keeps its own base_branch, so it is checked too.
+  if (["main", "master", "HEAD"].includes(dag.base_branch))
+    throw new Error(`base branch must be a feature branch, not ${dag.base_branch}; create one first (git switch -c feature/${feature})` +
+      (existing ? " and set base_branch in crew.json to it" : ""));
   if (!nonEmptyList(dag.validate)) {
     dag.validate = readGates(root);
     if (!dag.validate.length) throw new Error("no commands in a ```gates block of docs/KICKOFF.md (Crew refuses an empty validate)");
