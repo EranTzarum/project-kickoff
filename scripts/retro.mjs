@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Draft lesson candidates from STATE.md + .kickoff/HISTORY.jsonl; save to the user's lesson store.
 // The draft lives in the user's store, never inside the project, so it can never be committed.
-import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from "node:fs";
-import { join, resolve, relative, isAbsolute } from "node:path";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync, realpathSync } from "node:fs";
+import { join, resolve, relative, isAbsolute, dirname, basename } from "node:path";
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { isValidRow, projectId } from "./log.mjs";
@@ -25,9 +25,17 @@ export function draftPath(root, store) {
   const pid = projectId(root);
   if (!/^[0-9a-f]{8,64}$/.test(String(pid))) throw new Error(`.kickoff/project.json has an invalid project_id; expected hex`);
   const f = resolve(store, "drafts", `${pid}.md`);
-  const rel = relative(resolve(root), f);
+  // Compare physical paths: a junction or symlink in the store path (or an existing draft link) is followed.
+  const rel = relative(physical(root), physical(f));
   if (rel === "" || (rel.split(/[\\/]/)[0] !== ".." && !isAbsolute(rel))) throw new Error(`the lesson store ${resolve(store)} is inside the project; set PROJECT_KICKOFF_HOME outside it`);
   return f;
+}
+
+// realpath of the longest existing ancestor, with the missing tail appended.
+function physical(p) {
+  let head = resolve(p), tail = [];
+  while (!existsSync(head) && dirname(head) !== head) { tail.unshift(basename(head)); head = dirname(head); }
+  return join(realpathSync.native(head), ...tail);
 }
 
 // Drafts made before the store held them (.kickoff/lessons-candidates.md) are still read once by --save.

@@ -1,7 +1,7 @@
 // node --test scripts/retro.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { mkdtempSync, rmSync, readFileSync, writeFileSync, mkdirSync, existsSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -149,4 +149,20 @@ test("--save still reads a draft made by the old version in .kickoff/", () => {
   assert.equal(readStore(store)[0].rule, "Keep the old rule");
   rmSync(dir, { recursive: true, force: true });
   rmSync(store, { recursive: true, force: true });
+});
+
+test("a store reached through a junction or symlink into the project is refused", () => {
+  const dir = project();
+  writeFileSync(join(dir, "STATE.md"), "## Mistakes\n- private\n");
+  const target = join(dir, "private-store");
+  mkdirSync(target);
+  const outside = mkdtempSync(join(tmpdir(), "retro-link-"));
+  const link = join(outside, "kickoff");
+  symlinkSync(target, link, "junction");
+  const r = run([dir], { PROJECT_KICKOFF_HOME: link });
+  assert.equal(r.status, 1, r.stdout);
+  assert.match(r.stderr, /inside the project/);
+  assert.equal(existsSync(join(target, "drafts")), false);
+  rmSync(outside, { recursive: true, force: true });
+  rmSync(dir, { recursive: true, force: true });
 });
