@@ -21,6 +21,7 @@ Format: `| id | date | category | what happened | evidence | rule | stage |`
 | L8 | 2026-07-19 | process | A worker stalled asking permission to touch a shared dialog component and needed a second "AUTHORIZED" ticket | Codex R6 | Pre-authorize backward-compatible edits to shared components in the ticket's scope | intake |
 | L9 | 2026-08-06 | process | A plan was approved, then the owner had to add an archive-visibility rule before generation | Cursor prompts 08-06 | A plan is approvable only with full acceptance criteria including edge-case visibility rules | intake |
 | L101 | 2026-10-14 | process | The skill promised speed but recorded nothing: neither the reference build nor a later field run could say how long a stage or an owner blocker took, so "idea to pilot in two weeks" could not be checked | field run 2026-10-13/14; plan v2 | Every project keeps an append-only event ledger from stage 0 (`.kickoff/HISTORY.jsonl`); speed claims come only from `measure.mjs` over real ledgers | intake |
+| L102 | 2026-10-14 | process | On a project that already existed, /project-kickoff status only said "docs/KICKOFF.md missing": the skill had nothing to offer a repo mid-build, so its docs were never mapped and nothing guided the remaining work | field run 2026-10-13/14 | An existing repo is adopted, not kicked off: map existing documents onto deliverables, render only what is missing, never a parallel document, and rank the gaps by risk | intake |
 
 ## Domain and data model (stage 1)
 
