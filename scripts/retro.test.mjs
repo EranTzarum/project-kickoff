@@ -1,12 +1,12 @@
 // node --test scripts/retro.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { mkdtempSync, rmSync, readFileSync, writeFileSync, mkdirSync, existsSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { draftCandidates, parseCandidates, saveLessons, readStore, draftTrackedReason } from "./retro.mjs";
+import { draftCandidates, parseCandidates, saveLessons, readStore, draftPath, formatCandidates } from "./retro.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const run = (args, env = {}) => spawnSync(process.execPath, [join(here, "retro.mjs"), ...args], { encoding: "utf8", env: { ...process.env, ...env } });
@@ -63,41 +63,47 @@ test("ledger-derived candidates", () => {
   rmSync(dir, { recursive: true, force: true });
 });
 
-test("CLI draft, force, and pipe in mistake cell", () => {
+test("CLI draft goes to the user store, never the project; --force; a pipe stays in one cell", () => {
   const dir = project();
   const store = mkdtempSync(join(tmpdir(), "retro-store-"));
   const env = { PROJECT_KICKOFF_HOME: store };
   writeFileSync(join(dir, "STATE.md"), "## Mistakes\n- used a|b in config\n");
-  assert.equal(run([dir], env).status, 0);
-  const text = readFileSync(join(dir, ".kickoff/lessons-candidates.md"), "utf8");
+  const r = run([dir], env);
+  assert.equal(r.status, 0, r.stderr);
+  const f = draftPath(dir, store);
+  assert.ok(f.startsWith(join(store, "drafts")));
+  assert.ok(r.stdout.includes(f));
+  const text = readFileSync(f, "utf8");
   assert.match(text, /used a\\\|b in config/);
+  assert.equal(existsSync(join(dir, ".kickoff/lessons-candidates.md")), false);
+  assert.equal(existsSync(join(dir, ".kickoff/.gitignore")), false);
   assert.equal(run([dir], env).status, 1);
   assert.equal(run([dir, "--force"], env).status, 0);
-  const parsed = parseCandidates(text);
-  assert.equal(parsed[0].what, "used a|b in config");
+  assert.equal(parseCandidates(text)[0].what, "used a|b in config");
   rmSync(dir, { recursive: true, force: true });
   rmSync(store, { recursive: true, force: true });
 });
 
-test("--save and duplicate skip with project_id", () => {
+test("--save reads the store draft, skips rows without a rule and repeats; --list shows the project", () => {
   const dir = project();
   const store = mkdtempSync(join(tmpdir(), "retro-store-"));
   const env = { PROJECT_KICKOFF_HOME: store };
-  mkdirSync(join(dir, ".kickoff"), { recursive: true });
-  writeFileSync(join(dir, ".kickoff/project.json"), JSON.stringify({ project_id: "feedfacefeedface" }) + "\n");
   writeFileSync(join(dir, "STATE.md"), "## Mistakes\n- one\n- two\n");
-  run([dir], env);
-  let md = readFileSync(join(dir, ".kickoff/lessons-candidates.md"), "utf8");
-  md = md.replace("(write the rule)", "Always check gates", 1);
-  writeFileSync(join(dir, ".kickoff/lessons-candidates.md"), md);
+  assert.equal(run([dir, "--save"], env).status, 1, "no draft yet");
+  assert.equal(run([dir], env).status, 0);
+  const pid = JSON.parse(readFileSync(join(dir, ".kickoff/project.json"), "utf8")).project_id;
+  const f = draftPath(dir, store);
+  writeFileSync(f, readFileSync(f, "utf8").replace("(write the rule)", "Always check gates"));
   const r1 = run([dir, "--save"], env);
-  assert.equal(r1.status, 0);
+  assert.equal(r1.status, 0, r1.stderr);
   assert.match(r1.stdout, /saved 1, skipped 1 \(no rule\), 0 already saved/);
   const line = readStore(store)[0];
-  assert.equal(line.project_id, "feedfacefeedface");
+  assert.equal(line.project_id, pid);
   assert.equal(line.rule, "Always check gates");
-  const r2 = run([dir, "--save"], env);
-  assert.match(r2.stdout, /saved 0, skipped 1 \(no rule\), 1 already saved/);
+  assert.match(run([dir, "--save"], env).stdout, /saved 0, skipped 1 \(no rule\), 1 already saved/);
+  const listed = run(["--list"], env);
+  assert.match(listed.stdout, /\| project \|/);
+  assert.ok(listed.stdout.includes(`| ${pid.slice(0, 8)} |`));
   rmSync(dir, { recursive: true, force: true });
   rmSync(store, { recursive: true, force: true });
 });
@@ -108,90 +114,87 @@ test("--list empty and with saved row", () => {
   const empty = run(["--list"], env);
   assert.equal(empty.status, 0);
   assert.match(empty.stdout, /no saved lessons/);
-  mkdirSync(store, { recursive: true });
   writeFileSync(join(store, "lessons.jsonl"), JSON.stringify({ v: 1, saved: "2026-01-01T00:00:00.000Z", project_id: "x", date: "2026-01-01", category: "process", what: "trap", evidence: "STATE.md", rule: "avoid trap", stage: "build-loop", class: "CANDIDATE REUSABLE" }) + "\n");
-  const listed = run(["--list"], env);
-  assert.match(listed.stdout, /avoid trap/);
+  assert.match(run(["--list"], env).stdout, /avoid trap/);
   rmSync(store, { recursive: true, force: true });
 });
 
-test("the draft is git-ignored; a project without an id gets one on save; --list shows the project", () => {
+test("the draft never lands inside the project: bad project ids and a store inside the project are refused", () => {
+  const dir = project();
+  mkdirSync(join(dir, ".kickoff"), { recursive: true });
+  writeFileSync(join(dir, "STATE.md"), "## Mistakes\n- private\n");
+  const inside = join(dir, "store");
+  const r = run([dir], { PROJECT_KICKOFF_HOME: inside });
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /inside the project/);
+  assert.equal(existsSync(inside), false);
+  writeFileSync(join(dir, ".kickoff/project.json"), JSON.stringify({ project_id: "../../escape" }));
+  const store = mkdtempSync(join(tmpdir(), "retro-store-"));
+  assert.throws(() => draftPath(dir, store), /invalid project_id/);
+  assert.equal(run([dir], { PROJECT_KICKOFF_HOME: store }).status, 1);
+  rmSync(dir, { recursive: true, force: true });
+  rmSync(store, { recursive: true, force: true });
+});
+
+test("--save still reads a draft made by the old version in .kickoff/", () => {
   const dir = project();
   const store = mkdtempSync(join(tmpdir(), "retro-store-"));
-  const env = { PROJECT_KICKOFF_HOME: store };
-  writeFileSync(join(dir, "STATE.md"), "## Mistakes\n- one\n");
-  assert.equal(run([dir], env).status, 0);
-  assert.equal(readFileSync(join(dir, ".kickoff/.gitignore"), "utf8"), "lessons-candidates.md\n");
-  assert.equal(run([dir, "--force"], env).status, 0);
-  assert.equal(readFileSync(join(dir, ".kickoff/.gitignore"), "utf8"), "lessons-candidates.md\n", "not added twice");
-  const f = join(dir, ".kickoff/lessons-candidates.md");
-  writeFileSync(f, readFileSync(f, "utf8").replace("(write the rule)", "Do it once"));
-  assert.equal(existsSync(join(dir, ".kickoff/project.json")), false);
-  assert.equal(run([dir, "--save"], env).status, 0);
-  const pid = JSON.parse(readFileSync(join(dir, ".kickoff/project.json"), "utf8")).project_id;
-  assert.equal(readStore(store)[0].project_id, pid);
-  const listed = run(["--list"], env);
-  assert.match(listed.stdout, /\| project \|/);
-  assert.ok(listed.stdout.includes(`| ${pid.slice(0, 8)} |`));
+  writeFileSync(join(dir, "STATE.md"), "## Mistakes\n- old one\n");
+  const rows = draftCandidates(dir).map((r) => ({ ...r, rule: "Keep the old rule" }));
+  mkdirSync(join(dir, ".kickoff"), { recursive: true });
+  writeFileSync(join(dir, ".kickoff/lessons-candidates.md"), formatCandidates(rows));
+  const r = run([dir, "--save"], { PROJECT_KICKOFF_HOME: store });
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stderr, /old draft/);
+  assert.equal(readStore(store)[0].rule, "Keep the old rule");
   rmSync(dir, { recursive: true, force: true });
   rmSync(store, { recursive: true, force: true });
 });
 
-test("a draft that git already tracks is never rewritten", () => {
-  const dir = mkdtempSync(join(tmpdir(), "retro-git-"));
-  const store = mkdtempSync(join(tmpdir(), "retro-store-"));
-  const git = (...a) => spawnSync("git", a, { cwd: dir, encoding: "utf8" });
-  git("init", "-q");
-  mkdirSync(join(dir, ".kickoff"));
-  writeFileSync(join(dir, ".kickoff/lessons-candidates.md"), "old draft\n");
-  git("add", ".kickoff/lessons-candidates.md");
-  writeFileSync(join(dir, "STATE.md"), "## Mistakes\n- secret detail\n");
-  const r = run([dir, "--force"], { PROJECT_KICKOFF_HOME: store });
-  assert.equal(r.status, 1);
-  assert.match(r.stderr, /git rm --cached \.kickoff\/lessons-candidates\.md/);
-  // An inherited GIT_DIR pointing at missing metadata does not hide the project's own repo.
-  const r2 = run([dir, "--force"], { PROJECT_KICKOFF_HOME: store, GIT_DIR: join(dir, "missing-git-dir") });
-  assert.equal(r2.status, 1);
-  assert.match(r2.stderr, /git rm --cached/);
-  assert.equal(readFileSync(join(dir, ".kickoff/lessons-candidates.md"), "utf8"), "old draft\n");
-  rmSync(dir, { recursive: true, force: true });
-  rmSync(store, { recursive: true, force: true });
-});
-
-test("when git cannot be asked, only a readable empty .git is allowed; an untracked draft in a repo is fine", () => {
-  const repo = mkdtempSync(join(tmpdir(), "retro-nogit-"));
-  mkdirSync(join(repo, ".git"));
-  writeFileSync(join(repo, ".git", "index"), "");
-  assert.match(draftTrackedReason(repo, "git-binary-that-does-not-exist"), /cannot check/);
-  // Anything but a readable, empty folder is refused: a .git file (worktree pointer), or any content.
-  rmSync(join(repo, ".git"), { recursive: true, force: true });
-  writeFileSync(join(repo, ".git"), "gitdir: elsewhere\n");
-  assert.match(draftTrackedReason(repo, "git-binary-that-does-not-exist"), /cannot check/);
-  // An access error while looking up .git is a refusal, never "absent".
-  rmSync(join(repo, ".git"), { force: true });
-  const denied = () => { throw Object.assign(new Error("denied"), { code: "EACCES" }); };
-  assert.match(draftTrackedReason(repo, "git-binary-that-does-not-exist", { lstat: denied }), /cannot check/);
-
-  rmSync(repo, { recursive: true, force: true });
-  const fresh = project();
-  assert.equal(draftTrackedReason(fresh), null, "an untracked draft in a readable repo is fine");
-  rmSync(fresh, { recursive: true, force: true });
-});
-
-test("a damaged repo (HEAD missing, index intact) still protects a tracked draft", () => {
-  const dir = mkdtempSync(join(tmpdir(), "retro-nohead-"));
-  const store = mkdtempSync(join(tmpdir(), "retro-store-"));
-  const git = (...a) => spawnSync("git", a, { cwd: dir, encoding: "utf8" });
-  git("init", "-q");
-  mkdirSync(join(dir, ".kickoff"));
-  writeFileSync(join(dir, ".kickoff/lessons-candidates.md"), "old draft\n");
-  git("add", ".kickoff/lessons-candidates.md");
-  rmSync(join(dir, ".git", "HEAD"));
-  writeFileSync(join(dir, "STATE.md"), "## Mistakes\n- private detail\n");
-  const r = run([dir, "--force"], { PROJECT_KICKOFF_HOME: store });
+test("a store reached through a junction or symlink into the project is refused", () => {
+  const dir = project();
+  writeFileSync(join(dir, "STATE.md"), "## Mistakes\n- private\n");
+  const target = join(dir, "private-store");
+  mkdirSync(target);
+  const outside = mkdtempSync(join(tmpdir(), "retro-link-"));
+  const link = join(outside, "kickoff");
+  symlinkSync(target, link, "junction");
+  const r = run([dir], { PROJECT_KICKOFF_HOME: link });
   assert.equal(r.status, 1, r.stdout);
-  assert.match(r.stderr, /cannot check|git rm --cached/);
-  assert.equal(readFileSync(join(dir, ".kickoff/lessons-candidates.md"), "utf8"), "old draft\n");
+  assert.match(r.stderr, /inside the project/);
+  assert.equal(existsSync(join(target, "drafts")), false);
+  rmSync(outside, { recursive: true, force: true });
   rmSync(dir, { recursive: true, force: true });
+});
+
+test("a dangling draft link (target not created yet) is refused", (t) => {
+  const dir = project();
+  writeFileSync(join(dir, "STATE.md"), "## Mistakes\n- private\n");
+  const store = mkdtempSync(join(tmpdir(), "retro-store-"));
+  const f = draftPath(dir, store);
+  mkdirSync(join(store, "drafts"), { recursive: true });
+  try { symlinkSync(join(dir, "private.md"), f, "file"); }
+  catch (e) { if (e.code === "EPERM") { t.skip("file symlinks need Developer Mode on Windows"); return; } throw e; }
+  const r = run([dir], { PROJECT_KICKOFF_HOME: store });
+  assert.equal(r.status, 1, r.stdout);
+  assert.match(r.stderr, /link to a missing target/);
+  assert.equal(existsSync(join(dir, "private.md")), false);
   rmSync(store, { recursive: true, force: true });
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("a store inside the project is refused even when its drafts folder links outside", () => {
+  const dir = project();
+  writeFileSync(join(dir, "STATE.md"), "## Mistakes\n- private\n");
+  const store = join(dir, "store");
+  mkdirSync(store);
+  const outside = mkdtempSync(join(tmpdir(), "retro-out-"));
+  symlinkSync(outside, join(store, "drafts"), "junction");
+  const r = run([dir], { PROJECT_KICKOFF_HOME: store });
+  assert.equal(r.status, 1, r.stdout);
+  assert.match(r.stderr, /inside the project/);
+  assert.equal(run([dir, "--save"], { PROJECT_KICKOFF_HOME: store }).status, 1);
+  assert.equal(existsSync(join(store, "lessons.jsonl")), false);
+  rmSync(outside, { recursive: true, force: true });
+  rmSync(dir, { recursive: true, force: true });
 });
