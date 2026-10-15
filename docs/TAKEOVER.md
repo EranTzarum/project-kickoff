@@ -10,19 +10,19 @@ manager in the app sidebar. It works **only inside `project-kickoff/`**: edits, 
 happen in this repo. The umbrella files (`AGENTS.md`, `README.md`, `docs/`) belong to the manager
 session; ask it to update the project-kickoff rows after a big change.
 
-## State (2026-10-14, `main` @ `ad1c292`)
+## State (2026-10-15, `main` @ `7f43409`)
 
 - **Repo:** public, `main` only. Installed for Claude Code through a junction in
   `~/.claude/skills/project-kickoff`. Codex and Cursor get **copies** (Windows and WSL) in
   `~/.codex/skills/project-kickoff` and `~/.cursor/skills/project-kickoff`. Windows copies synced
-  at `ad1c292`; WSL copies not synced since before v2.
+  at `7f43409`; WSL copies not synced since before v2.
 - **What it does:** staged pre-flight (six batched questionnaires), `render.mjs` renders docs, guardrail
   hooks, CI and `.gitattributes`; `preflight.mjs` gives advisory checks (`--strict` for CI); `adopt.mjs` adopts
   an existing repo; `log.mjs` + `measure.mjs` keep and read an event ledger; `owner-steps.mjs` formats and
   lints owner steps; `docs/LAUNCH.md` lists owner-only blockers from day 1; `to-crew.mjs` exports a feature's tickets to `crew.json`, `build-route.mjs`
   detects Crew and logs the chosen route; `lessons.mjs --lint` checks the lessons; `retro.mjs` drafts candidate
   lessons from a project and keeps the user's own store. 108 lessons, each with a source and a class.
-- **Gate:** 14 test files, 112 tests, plus `lessons.mjs --lint`, all passing at `ad1c292`; public leak check clean.
+- **Gate:** 14 test files, 113 tests, plus `lessons.mjs --lint`, all passing at `7f43409`; public leak check clean.
 
 ## Open items, best first
 
@@ -45,9 +45,11 @@ pr-gate, merge only on the owner's `merge`.
 6. **P6 Learn across projects** — merged (#15): lesson `source` + `class` columns and `## Sources`, `lessons.mjs --lint`
    in the gate, `retro.mjs` (draft from STATE.md + ledger, `--save` to `~/.project-kickoff/lessons.jsonl`, `--list` read
    at stage 0), `CONTRIBUTING.md`. L108. Seven review rounds, all after round 1 on one check: never overwrite a
-   draft git tracks. Open option: write the draft into the user store instead of `.kickoff/`, which removes that
-   whole class of failure.
-7. **P7 Opt-in telemetry + profiles — NEXT.** known limit from P2: the generated CI installs Python dependencies
+   draft git tracks. Follow-up #16: the draft now lives in the user store (`~/.project-kickoff/drafts/<project id>.md`),
+   never in the project; the store, the draft and `lessons.jsonl` must be outside the project by name and by physical
+   path (junctions, symlinks, dangling links refused). An old `.kickoff/lessons-candidates.md` is read once by `--save`.
+7. **P7 Opt-in telemetry + profiles — NEXT.** Owner steps for the Supabase project were given 2026-10-14 (project
+   `kickoff-telemetry`, Free plan; send back the URL and the publishable key, never the secret key). known limit from P2: the generated CI installs Python dependencies
    with `pip install -r requirements.txt` or `pip install -e ".[dev]"`; a Poetry/uv/PDM dev group is not
    installed, so a `python -m pytest` gate fails there. The Python profile must pick the dependency manager.
    Then: kickoff's own backend (off by default, show before send, numbers only);
