@@ -25,7 +25,7 @@ Ask the right questions *before* the first line of code. Generate the docs and g
 | Type `/project-kickoff` in a fresh repo and answer **six short questionnaires** | Turns your answers into **real files** (docs, `AGENTS.md`, hooks, sub-agents, gate runner, CI) and checks what's missing | A project that starts with its guardrails, plus a **build-loop checklist** for every feature |
 
 Every question exists because something specific went wrong on a real three-month build. There are
-**110 dated lessons** behind the checklist, and the agent can quote the one behind any rule.
+**113 dated lessons** behind the checklist, and the agent can quote the one behind any rule.
 
 <p align="center">
   <img src="docs/assets/stages.svg" alt="Six pre-flight stages, then a build loop" width="980">
@@ -62,7 +62,7 @@ file a script can check, and generates the guardrail so the next project does no
 - 🔁 **Build-loop checklist per feature** — design → ticket → build route (kickoff loop or Crew) → worktree → gates → cross-model verify → migration runbook → `STATE.md`.
 - 🎨 **DESIGN.md first** — a project with screens gets one design file (colors, type, spacing, shapes, components) at stage 2, before the first screen; agents take every visual value from it, and CI lints it.
 - 🐤 **Post-deploy canary** — a project with a live URL gets a Playwright check that runs after each production deploy: main pages, a non-200 page, console errors or screenshot drift fail it, and it opens an issue with the rollback steps.
-- 📚 **110 dated lessons with evidence** — every checklist item cites one. Ask *why* and get the commit, the doc line, or the chat that taught it.
+- 📚 **113 dated lessons with evidence** — every checklist item cites one. Ask *why* and get the commit, the doc line, or the chat that taught it.
 - 🧱 **Stack profiles** — Supabase + React/Vite + Vercel ships as default with a platform-limits sheet; add your own in one file.
 - 🤝 **Runs in Claude Code, Codex CLI and Cursor** — same folder, no build, no dependencies.
 
@@ -229,7 +229,7 @@ scripts/                     gates.mjs · db-types.mjs · worktree-setup.ps1/.sh
 
 ## The lessons behind the checklist
 
-[`references/lessons.md`](references/lessons.md) — **110 rows**, each with a date, a category, what happened,
+[`references/lessons.md`](references/lessons.md) — **113 rows**, each with a date, a category, what happened,
 the evidence (commit hash, doc line or chat), the rule it produced and the stage that now owns it. Mined from a
 real project's git history (365 commits, 63 migrations), its docs, the author's decision notes, and the
 author's chat history across Claude Code, Codex and Cursor. Each lesson names its source project and class; community lessons come by PR ([`CONTRIBUTING.md`](CONTRIBUTING.md)).
@@ -240,7 +240,7 @@ flowchart LR
     D["repo docs"] --> L
     V["decision notes"] --> L
     C["chat history: Claude, Codex, Cursor"] --> L
-    L[("lessons.md — 110 dated rows")] --> S["stages.md — questions and exit checklists"]
+    L[("lessons.md — 113 dated rows")] --> S["stages.md — questions and exit checklists"]
     L --> H["harness.md — which hook guards which lesson"]
     S --> T["templates/"]
     H --> T
@@ -263,7 +263,7 @@ AGENTS.md                                 rules for agents working on this repo 
 agents/openai.yaml                        Codex display metadata
 references/
   stages.md                               questionnaire · deliverables · exit checklist per stage (cites lessons)
-  lessons.md                              110 dated lessons
+  lessons.md                              113 dated lessons
   harness.md                              which generated file guards which lesson; what Codex/Cursor lack
   stack-profiles/supabase-react-vercel.md defaults + platform-limits sheet
 templates/

@@ -29,11 +29,11 @@ const row = (id, o = {}) => {
 test("the real lessons.md passes the lint with its cited ids", () => {
   assert.deepEqual(lintLessons(real, { cited: citedIds(root) }), []);
   const lessons = parseLessons(real);
-  assert.equal(lessons.length, 110);
+  assert.equal(lessons.length, 113);
   assert.equal(lessons.find((l) => l.id === "L108").source, "K");
   assert.equal(lessons.find((l) => l.id === "L5").source, "P1");
   assert.ok(lessons.every((l) => l.class === "CANDIDATE REUSABLE"));
-  assert.deepEqual(declaredSources(real), ["P1", "P2", "K"]);
+  assert.deepEqual(declaredSources(real), ["P1", "P2", "K", "C1"]);
 });
 
 test("each error is reported once, naming the id", () => {
@@ -79,7 +79,7 @@ test("CLI: a bad file exits 1 with the error on stderr; the repo exits 0", () =>
   }
   const ok = run(["--lint"]);
   assert.equal(ok.status, 0, ok.stderr);
-  assert.equal(ok.stdout.trim(), "ok: 110 lessons");
+  assert.equal(ok.stdout.trim(), "ok: 113 lessons");
   assert.equal(run([]).status, 1);
 });
 
