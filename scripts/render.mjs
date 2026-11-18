@@ -129,6 +129,7 @@ const derived = {
   PEER_READ_PATHS: a.peerReadPaths ?? "none yet",
   IDENTITY_FIELDS: a.identityFields ?? "none yet",
   SIZE_BUDGETS: a.sizeBudgets ?? "defaults; raise deliberately",
+  CANARY_PAGES: (a.canaryPages ?? ["/", "/login"]).join(","),
   LANGS: Array.isArray(a.langs) ? a.langs.join(", ") : (a.langs ?? "en"),
 };
 // Flat string answers win over derived values only when the answer key matches a placeholder name.
@@ -194,9 +195,18 @@ if (onlyStage === null || onlyStage === 5) {
   const dst = join(root, "scripts/preflight.mjs");
   if (!existsSync(dst) || force) { mkdirSync(dirname(dst), { recursive: true }); copyFileSync(join(SKILL, "scripts/preflight.mjs"), dst); console.log("write  scripts/preflight.mjs"); written++; }
 }
-if (a.freeTier && (onlyStage === null || onlyStage === 5)) {
-  const dst = join(root, ".github/workflows/keepalive.yml");
-  if (!existsSync(dst) || force) { mkdirSync(dirname(dst), { recursive: true }); writeOut(dst, dst, render(readFileSync(join(T, "ci/keepalive.yml"), "utf8"))); console.log("write  .github/workflows/keepalive.yml"); written++; }
+// Stage 5 files that only some projects get: keepalive for a free-tier DB, the post-deploy canary (L112)
+// for a project with a live URL.
+const OPTIONAL_FILES = [
+  [a.freeTier, "ci/keepalive.yml", ".github/workflows/keepalive.yml"],
+  [set(a.prodUrl), "ci/canary.yml", ".github/workflows/canary.yml"],
+  [set(a.prodUrl), "tests/canary/canary.spec.mjs", "tests/canary/canary.spec.mjs"],
+  [set(a.prodUrl), "tests/canary/playwright.config.mjs", "tests/canary/playwright.config.mjs"],
+];
+for (const [wanted, src, rel] of OPTIONAL_FILES) {
+  if (!wanted || (onlyStage !== null && onlyStage !== 5)) continue;
+  const dst = join(root, rel);
+  if (!existsSync(dst) || force) { mkdirSync(dirname(dst), { recursive: true }); writeOut(dst, dst, render(readFileSync(join(T, src), "utf8"))); console.log(`write  ${rel}`); written++; }
 }
 // Launch items depend on answers that arrive in later stages (OAuth in stage 4, a VM deploy in stage 5). When
 // docs/LAUNCH.md already exists, newly selected items are appended; existing (possibly ticked) items are untouched.

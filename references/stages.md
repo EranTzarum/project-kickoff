@@ -166,6 +166,7 @@ Exit checklist:
 - [ ] Design tokens approved by the owner before UI waves — L80
 - [ ] Tickets reference a shared context file, seats tracked — L81
 - [ ] .gitattributes pins *.sh, *.yml, Caddyfile and Dockerfile to LF; no CRLF shell script — L104
+- [ ] A project with a live URL has the post-deploy canary (`.github/workflows/canary.yml` + `tests/canary/`); its pages list is right — L112
 
 ---
 
@@ -196,5 +197,5 @@ Not a one-time stage. Print on `/project-kickoff feature <name>` with the featur
 7. **Verify** with a different model family, given the original task + diff + criteria, never the worker's summary; trust the filesystem over any report. — L91, L98
 8. **Schema changed?** Runbook: additive → types regen → deploy → revoke; `rls-auditor`; anon-surface test; contract test for every new RPC. — L39, L67, L84
 9. **Data changed?** Spot-check N real records end to end; invariants, not counts; load-test fetch changes against the full dataset. — L83, L93, L94
-10. **Checkpoint**: check hard-refresh before treating a "missing" deployed feature as a bug (L96); push the branch for review, update `STATE.md` (done / in flight / next / mistakes), `vault-capture` any real decision. Run `retro.mjs <root>` and save the lessons the owner agrees with. Never merge to main without instruction. — L69, L97, L108
+10. **Checkpoint**: check hard-refresh before treating a "missing" deployed feature as a bug (L96); push the branch for review, update `STATE.md` (done / in flight / next / mistakes), `vault-capture` any real decision. Run `retro.mjs <root>` and save the lessons the owner agrees with. Never merge to main without instruction. After a production deploy the canary must pass; the first feature fills in its `core flow` test. — L69, L97, L108, L112
 11. **Budgets**: identical-ticket retries ≤ 2; token/turn cap on any open-ended mandate; checkpoint at ~70 % quota. — L89, L90, L69
