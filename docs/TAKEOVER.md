@@ -10,19 +10,20 @@ manager in the app sidebar. It works **only inside `project-kickoff/`**: edits, 
 happen in this repo. The umbrella files (`AGENTS.md`, `README.md`, `docs/`) belong to the manager
 session; ask it to update the project-kickoff rows after a big change.
 
-## State (2026-10-15, `main` @ `7f43409`)
+## State (2026-11-18, `main` @ `6e61879`)
 
 - **Repo:** public, `main` only. Installed for Claude Code through a junction in
   `~/.claude/skills/project-kickoff`. Codex and Cursor get **copies** (Windows and WSL) in
   `~/.codex/skills/project-kickoff` and `~/.cursor/skills/project-kickoff`. Windows copies synced
-  at `7f43409`; WSL copies not synced since before v2.
+  at `6e61879`; WSL copies not synced since before v2.
 - **What it does:** staged pre-flight (six batched questionnaires), `render.mjs` renders docs, guardrail
   hooks, CI and `.gitattributes`; `preflight.mjs` gives advisory checks (`--strict` for CI); `adopt.mjs` adopts
   an existing repo; `log.mjs` + `measure.mjs` keep and read an event ledger; `owner-steps.mjs` formats and
   lints owner steps; `docs/LAUNCH.md` lists owner-only blockers from day 1; `to-crew.mjs` exports a feature's tickets to `crew.json`, `build-route.mjs`
   detects Crew and logs the chosen route; `lessons.mjs --lint` checks the lessons; `retro.mjs` drafts candidate
-  lessons from a project and keeps the user's own store. 108 lessons, each with a source and a class.
-- **Gate:** 14 test files, 113 tests, plus `lessons.mjs --lint`, all passing at `7f43409`; public leak check clean.
+  lessons from a project and keeps the user's own store; stage 5 renders a post-deploy canary
+  (`.github/workflows/canary.yml` + `tests/canary/`) for a project with a live URL. 109 lessons, each with a source and a class.
+- **Gate:** 14 test files, 114 tests, plus `lessons.mjs --lint`, all passing at `6e61879`; public leak check clean.
 
 ## Open items, best first
 
@@ -48,6 +49,13 @@ pr-gate, merge only on the owner's `merge`.
    draft git tracks. Follow-up #16: the draft now lives in the user store (`~/.project-kickoff/drafts/<project id>.md`),
    never in the project; the store, the draft and `lessons.jsonl` must be outside the project by name and by physical
    path (junctions, symlinks, dangling links refused). An old `.kickoff/lessons-candidates.md` is read once by `--save`.
+6b. **Post-deploy canary** — merged (#17, owner request 2026-11-18, outside the P plan): Playwright after a
+   production deploy (Vercel `deployment_status`, or by hand with a URL for EAS) loads the pages in `canaryPages`
+   (default `/`, `/login`) and fails on non-200, a console error or screenshot drift vs the last passing run; on
+   failure it opens an issue with rollback steps (rollback stays the owner's). Install follows the lockfile, runs via
+   the project's package manager (Yarn PnP). pr-gate 3 rounds, green. L112. Not verified live: screenshot drift.
+   Other repos (brofixapp-site, BroFix legal site, CRM) adopt it in their own sessions. Open: DESIGN.md adoption
+   (Manager proposal) waits on the owner's answer.
 7. **P7 Opt-in telemetry + profiles — NEXT.** Owner steps for the Supabase project were given 2026-10-14 (project
    `kickoff-telemetry`, Free plan; send back the URL and the publishable key, never the secret key). known limit from P2: the generated CI installs Python dependencies
    with `pip install -r requirements.txt` or `pip install -e ".[dev]"`; a Poetry/uv/PDM dev group is not
