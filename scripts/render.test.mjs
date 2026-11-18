@@ -95,7 +95,6 @@ test("the post-deploy canary renders only for a project with a live URL, with it
   const wf = readFileSync(join(dir, ".github/workflows/canary.yml"), "utf8");
   assert.match(wf, /deployment_status/);
   assert.match(wf, /vars\.CANARY_PROD_URL \|\| 'https:\/\/crm\.example\.com'/); // prod domain, never the SSO-protected per-deploy URL
-  assert.match(wf, /workflows: \["pages-build-deployment"\]/);
   assert.match(wf, /gh issue list --label canary/);
   assert.match(wf, /cache-matched-key == ''/);
   assert.doesNotMatch(wf, /\{\{[A-Z_]+\}\}/); // no unfilled kickoff placeholder

@@ -43,7 +43,6 @@ Replace every one of these when rendering. The checker flags any `{{...}}` left 
 | `{{LAUNCH_ITEMS}}` | owner-only blockers from `templates/launch/items.json`: `always` items, plus `email` (`smtpProvider` set, not none), `oauth` (`oauthProviders` other than none), `payments` (`payments: true`), `ai` (`aiProvider` set, not none), `vm` (`deployTarget: "vm"`); each a checkbox heading, what it unblocks and its owner steps | see `docs/LAUNCH.md` |
 | `{{GATES}}` | gate commands, one per line | npm run typecheck |
 | `{{CANARY_PAGES}}` | pages the post-deploy canary loads, comma list (from `canaryPages`; default `/,/login`) | /,/login,/app |
-| `{{PAGES_WORKFLOW}}` | GitHub Pages deploy workflow the canary follows (from `pagesWorkflow`; default `pages-build-deployment`) | Deploy to Pages |
 | `{{DEPLOY_CMD}}` | how prod deploys (from git only) | push to main |
 | `{{TYPES_TARGETS}}` | files that receive generated DB types | apps/web/src/lib/database.types.ts |
 | `{{DATE}}` | today, ISO | 2026-09-28 |

@@ -130,7 +130,6 @@ const derived = {
   IDENTITY_FIELDS: a.identityFields ?? "none yet",
   SIZE_BUDGETS: a.sizeBudgets ?? "defaults; raise deliberately",
   CANARY_PAGES: (a.canaryPages ?? ["/", "/login"]).join(","),
-  PAGES_WORKFLOW: a.pagesWorkflow ?? "pages-build-deployment",
   LANGS: Array.isArray(a.langs) ? a.langs.join(", ") : (a.langs ?? "en"),
 };
 // Flat string answers win over derived values only when the answer key matches a placeholder name.
