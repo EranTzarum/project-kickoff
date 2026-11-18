@@ -1,0 +1,79 @@
+# Post-deploy canary (L112). Runs when the host reports a successful production deploy (Vercel posts GitHub
+# deployment_status events), or by hand with a URL (EAS or any other deploy: Actions -> canary -> Run workflow).
+# Fails on a non-200 page, a console error, or a screenshot that drifted from the last passing run.
+# On failure it opens an issue with the rollback steps. The rollback itself is the owner's call.
+name: canary
+
+on:
+  deployment_status:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: Deployed URL to check
+        required: true
+      reset:
+        description: Take new baseline screenshots (after an intended UI change)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  canary:
+    if: github.event_name == 'workflow_dispatch' || (github.event.deployment_status.state == 'success' && github.event.deployment_status.environment == 'Production')
+    runs-on: ubuntu-latest
+    env:
+      CANARY_URL: ${{ inputs.url || github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Playwright comes from the project when it already has it; otherwise it is installed for this run only.
+      # PW is the runner of the project's package manager (yarn keeps Plug'n'Play working).
+      - name: Install Playwright
+        run: |
+          PW=npx
+          if [ -f package.json ] && grep -q '"@playwright/test"' package.json; then
+            if [ -f pnpm-lock.yaml ]; then corepack enable && pnpm install --frozen-lockfile && PW="pnpm exec"
+            elif [ -f yarn.lock ]; then corepack enable && (yarn install --immutable || yarn install --frozen-lockfile) && PW=yarn
+            elif [ -f package-lock.json ]; then npm ci --no-audit --no-fund
+            else npm install --no-audit --no-fund; fi
+          else npm install --no-save --no-audit --no-fund @playwright/test; fi
+          echo "PW=$PW" >> "$GITHUB_ENV"
+          $PW playwright install --with-deps chromium
+      # The baseline is the last passing run's screenshots; a failed run never replaces it.
+      - name: Restore last good screenshots
+        if: ${{ !inputs.reset }}
+        uses: actions/cache/restore@v4
+        with:
+          path: tests/canary/baseline
+          key: canary-baseline-${{ github.run_id }}
+          restore-keys: canary-baseline-
+      - name: Canary
+        run: $PW playwright test -c tests/canary/playwright.config.mjs --update-snapshots=missing
+      - name: Keep these screenshots as the new baseline
+        if: success()
+        uses: actions/cache/save@v4
+        with:
+          path: tests/canary/baseline
+          key: canary-baseline-${{ github.run_id }}
+      - name: Upload the failure report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: canary-report
+          path: tests/canary/test-results
+      - name: Open an issue with the rollback steps
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue create --title "Canary failed after deploy: $CANARY_URL" --body "The post-deploy canary failed on $CANARY_URL (run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID; screenshots and diffs are in the canary-report artifact).
+
+          Rollback is the owner's decision:
+          - Vercel: Dashboard -> project -> Deployments -> the last good deployment -> ... -> Promote to Production (or \`vercel rollback\`).
+          - EAS Update: \`eas update:republish --group <last good update group>\`.
+          If the change was intended (a new design), run the canary workflow by hand with reset ticked to take new baseline screenshots."
