@@ -54,7 +54,7 @@ pr-gate, merge only on the owner's `merge`.
    (default `/`, `/login`) and fails on non-200, a console error or screenshot drift vs the last passing run; on
    failure it opens an issue with rollback steps (rollback stays the owner's). Install follows the lockfile, runs via
    the project's package manager (Yarn PnP). pr-gate 3 rounds, green. L112. Not verified live: screenshot drift.
-   Other repos (brofixapp-site, BroFix legal site, CRM) adopt it in their own sessions. Open: DESIGN.md adoption
+   Each of the owner's live sites adopts it in its own session. Open: DESIGN.md adoption
    (Manager proposal) waits on the owner's answer.
 7. **P7 Opt-in telemetry + profiles — NEXT.** Owner steps for the Supabase project were given 2026-10-14 (project
    `kickoff-telemetry`, Free plan; send back the URL and the publishable key, never the secret key). known limit from P2: the generated CI installs Python dependencies
