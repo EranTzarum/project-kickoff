@@ -1,11 +1,19 @@
 # Post-deploy canary (L112). Runs when the host reports a successful production deploy (Vercel posts GitHub
-# deployment_status events), or by hand with a URL (EAS or any other deploy: Actions -> canary -> Run workflow).
+# deployment_status events), after the GitHub Pages workflow succeeds (workflow_run; environment github-pages),
+# or by hand with a URL (EAS or any other deploy: Actions -> canary -> Run workflow).
+# The URL checked is the public production domain: Vercel's per-deployment *.vercel.app URL sits behind Vercel
+# SSO (302 to vercel.com/sso-api) and would fail every run. Override it with the repo variable CANARY_PROD_URL.
 # Fails on a non-200 page, a console error, or a screenshot that drifted from the last passing run.
 # On failure it opens an issue with the rollback steps. The rollback itself is the owner's call.
 name: canary
 
 on:
   deployment_status:
+  # GitHub Pages: the name of the workflow that deploys the site ("pages-build-deployment" for branch deploys).
+  # Its deployment events come from GITHUB_TOKEN and start no workflow, so the canary follows the workflow run.
+  workflow_run:
+    workflows: ["{{PAGES_WORKFLOW}}"]
+    types: [completed]
   workflow_dispatch:
     inputs:
       url:
@@ -22,10 +30,14 @@ permissions:
 
 jobs:
   canary:
-    if: github.event_name == 'workflow_dispatch' || (github.event.deployment_status.state == 'success' && github.event.deployment_status.environment == 'Production')
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      || (github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success' && github.event.deployment_status.environment == 'Production')
+      || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
+    concurrency: canary
     env:
-      CANARY_URL: ${{ inputs.url || github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
+      CANARY_URL: ${{ inputs.url || vars.CANARY_PROD_URL || '{{PROD_URL}}' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -46,12 +58,21 @@ jobs:
           $PW playwright install --with-deps chromium
       # The baseline is the last passing run's screenshots; a failed run never replaces it.
       - name: Restore last good screenshots
+        id: baseline
         if: ${{ !inputs.reset }}
         uses: actions/cache/restore@v4
         with:
           path: tests/canary/baseline
           key: canary-baseline-${{ github.run_id }}
           restore-keys: canary-baseline-
+      # GitHub evicts a cache unused for 7 days, so a quiet week loses the baseline. The run still checks pages and
+      # console errors but takes new screenshots instead of comparing: say so loudly rather than pass silently.
+      - name: Warn when there is no baseline to compare with
+        if: ${{ !inputs.reset && steps.baseline.outputs.cache-matched-key == '' }}
+        run: |
+          msg="No saved baseline screenshots (first run, or the cache expired after 7 days without a deploy). This run takes new ones; visual drift is NOT checked."
+          echo "::warning::$msg"
+          echo "$msg" >> "$GITHUB_STEP_SUMMARY"
       - name: Canary
         run: $PW playwright test -c tests/canary/playwright.config.mjs --update-snapshots=missing
       - name: Keep these screenshots as the new baseline
@@ -66,14 +87,25 @@ jobs:
         with:
           name: canary-report
           path: tests/canary/test-results
-      - name: Open an issue with the rollback steps
+      # One open issue per failure streak: a later failure comments on it instead of opening another.
+      - name: Open or update the canary issue with the rollback steps
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
-          gh issue create --title "Canary failed after deploy: $CANARY_URL" --body "The post-deploy canary failed on $CANARY_URL (run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID; screenshots and diffs are in the canary-report artifact).
+          run="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          open=$(gh issue list --label canary --state open --limit 1 --json number -q '.[0].number')
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --body "Failed again on $CANARY_URL (run: $run; screenshots and diffs are in the canary-report artifact)."
+            exit 0
+          fi
+          gh label create canary --color B60205 --description "Post-deploy canary failures" 2>/dev/null || true
+          gh issue create --label canary --title "Canary failed after deploy: $CANARY_URL" --body "The post-deploy canary failed on $CANARY_URL (run: $run; screenshots and diffs are in the canary-report artifact).
 
           Rollback is the owner's decision:
           - Vercel: Dashboard -> project -> Deployments -> the last good deployment -> ... -> Promote to Production (or \`vercel rollback\`).
+          - GitHub Pages: revert the bad commit on the publishing branch, or re-run the last good Pages workflow run.
           - EAS Update: \`eas update:republish --group <last good update group>\`.
-          If the change was intended (a new design), run the canary workflow by hand with reset ticked to take new baseline screenshots."
+          If the change was intended (a new design), run the canary workflow by hand with reset ticked to take new baseline screenshots.
+          Close this issue once the canary passes again."
