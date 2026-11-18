@@ -166,7 +166,7 @@ Exit checklist:
 - [ ] Design tokens approved by the owner before UI waves — L80
 - [ ] Tickets reference a shared context file, seats tracked — L81
 - [ ] .gitattributes pins *.sh, *.yml, Caddyfile and Dockerfile to LF; no CRLF shell script — L104
-- [ ] A project with a live URL has the post-deploy canary (`.github/workflows/canary.yml` + `tests/canary/`); its pages list is right — L112
+- [ ] A project with a live URL has the post-deploy canary (`.github/workflows/canary.yml` + `tests/canary/`); its pages list is right; repo variable `CANARY_PROD_URL` set when the public domain differs from `prodUrl` (never a per-deploy `*.vercel.app` URL: Vercel SSO) — L112
 
 ---
 
