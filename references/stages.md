@@ -167,6 +167,7 @@ Exit checklist:
 - [ ] Tickets reference a shared context file, seats tracked — L81
 - [ ] .gitattributes pins *.sh, *.yml, Caddyfile and Dockerfile to LF; no CRLF shell script — L104
 - [ ] A project with a live URL has the post-deploy canary (`.github/workflows/canary.yml` + `tests/canary/`); its pages list is right; repo variable `CANARY_PROD_URL` set when the public domain differs from `prodUrl` (never a per-deploy `*.vercel.app` URL: Vercel SSO) — L112
+- [ ] The canary's core-flow user is fully set up in production (multi-tenant: a member of a tenant with data; credentials in repo secrets, never real customer data); before the first baseline run the agent confirms it with read-only SQL (the user exists, has its membership, the tenant has rows) — L112
 
 ---
 
