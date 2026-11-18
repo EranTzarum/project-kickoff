@@ -32,15 +32,18 @@ jobs:
         with:
           node-version: 22
       # Playwright comes from the project when it already has it; otherwise it is installed for this run only.
+      # PW is the runner of the project's package manager (yarn keeps Plug'n'Play working).
       - name: Install Playwright
         run: |
+          PW=npx
           if [ -f package.json ] && grep -q '"@playwright/test"' package.json; then
-            if [ -f pnpm-lock.yaml ]; then corepack enable && pnpm install --frozen-lockfile
-            elif [ -f yarn.lock ]; then corepack enable && (yarn install --immutable || yarn install --frozen-lockfile)
+            if [ -f pnpm-lock.yaml ]; then corepack enable && pnpm install --frozen-lockfile && PW="pnpm exec"
+            elif [ -f yarn.lock ]; then corepack enable && (yarn install --immutable || yarn install --frozen-lockfile) && PW=yarn
             elif [ -f package-lock.json ]; then npm ci --no-audit --no-fund
             else npm install --no-audit --no-fund; fi
           else npm install --no-save --no-audit --no-fund @playwright/test; fi
-          npx playwright install --with-deps chromium
+          echo "PW=$PW" >> "$GITHUB_ENV"
+          $PW playwright install --with-deps chromium
       # The baseline is the last passing run's screenshots; a failed run never replaces it.
       - name: Restore last good screenshots
         if: ${{ !inputs.reset }}
@@ -50,7 +53,7 @@ jobs:
           key: canary-baseline-${{ github.run_id }}
           restore-keys: canary-baseline-
       - name: Canary
-        run: npx playwright test -c tests/canary/playwright.config.mjs --update-snapshots=missing
+        run: $PW playwright test -c tests/canary/playwright.config.mjs --update-snapshots=missing
       - name: Keep these screenshots as the new baseline
         if: success()
         uses: actions/cache/save@v4
