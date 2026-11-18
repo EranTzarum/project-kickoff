@@ -5,6 +5,7 @@ export default defineConfig({
   testDir: ".",
   testMatch: "canary.spec.mjs",
   snapshotPathTemplate: "{testDir}/baseline/{arg}{ext}",
+  outputDir: "test-results", // resolves to tests/canary/test-results; canary.yml uploads that path on failure
   reporter: "list",
   retries: 1,
   use: { browserName: "chromium" },

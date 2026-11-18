@@ -34,7 +34,11 @@ jobs:
       # Playwright comes from the project when it already has it; otherwise it is installed for this run only.
       - name: Install Playwright
         run: |
-          if [ -f package.json ] && grep -q '"@playwright/test"' package.json; then npm ci --no-audit --no-fund
+          if [ -f package.json ] && grep -q '"@playwright/test"' package.json; then
+            if [ -f pnpm-lock.yaml ]; then corepack enable && pnpm install --frozen-lockfile
+            elif [ -f yarn.lock ]; then corepack enable && (yarn install --immutable || yarn install --frozen-lockfile)
+            elif [ -f package-lock.json ]; then npm ci --no-audit --no-fund
+            else npm install --no-audit --no-fund; fi
           else npm install --no-save --no-audit --no-fund @playwright/test; fi
           npx playwright install --with-deps chromium
       # The baseline is the last passing run's screenshots; a failed run never replaces it.
@@ -58,7 +62,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: canary-report
-          path: test-results
+          path: tests/canary/test-results
       - name: Open an issue with the rollback steps
         if: failure()
         env:
