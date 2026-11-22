@@ -35,6 +35,12 @@ jobs:
         run: |
           if [ -f requirements.txt ]; then pip install -r requirements.txt
           else pip install -e ".[dev]" || pip install -e .; fi
+      # DESIGN.md is the design source of truth (L113): CI fails on its lint errors; locally the lint is advisory.
+      - name: Lint DESIGN.md
+        if: hashFiles('DESIGN.md') != ''
+        env:
+          DESIGN_MD_CLI: "0.4.0" # pinned @google/design.md version
+        run: npx -y "@google/design.md@$DESIGN_MD_CLI" lint DESIGN.md
       - name: Run gates from docs/KICKOFF.md
         run: node scripts/gates.mjs
       - name: Kickoff checklist (advisory)

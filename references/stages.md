@@ -77,7 +77,7 @@ Second call:
 6. Platform plan tier per service (hosting, DB, mail) — the limits sheet is copied from the profile and checked. — L25, L47
 7. Size budgets: JSON body, uploads, canvas payloads, function timeouts. — L26
 
-Deliverables: `docs/ARCHITECTURE.md`.
+Deliverables: `docs/ARCHITECTURE.md`, and `DESIGN.md` for a project with screens (answer `ui`, default yes).
 
 Exit checklist:
 - [ ] Identity fields stamped server-side; threat model per client-writable field — L21
@@ -89,6 +89,7 @@ Exit checklist:
 - [ ] Multi-app hosting routing defined — L32
 - [ ] External API auth mapped per host — L33; bulk pulls run server-side by script — L34
 - [ ] Risky UI mechanics and sync designs spiked, not assumed — L35, L36
+- [ ] A project with screens has `DESIGN.md` (colors, type, spacing, shapes, components) filled with the brand's values before the first screen is built; its lint (the pinned `@google/design.md` CLI, version 0.4.0, run by the `Lint DESIGN.md` step in `gates.yml`) is clean: advisory locally, CI fails on errors — L113
 - [ ] Browser extension: link pattern (A server / B site tab) and its reason written in `docs/ARCHITECTURE.md`; for A, queue lease + idempotency and token storage named (`references/chrome-extension.md`) — L15
 
 ---

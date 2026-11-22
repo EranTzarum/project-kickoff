@@ -195,16 +195,17 @@ if (onlyStage === null || onlyStage === 5) {
   const dst = join(root, "scripts/preflight.mjs");
   if (!existsSync(dst) || force) { mkdirSync(dirname(dst), { recursive: true }); copyFileSync(join(SKILL, "scripts/preflight.mjs"), dst); console.log("write  scripts/preflight.mjs"); written++; }
 }
-// Stage 5 files that only some projects get: keepalive for a free-tier DB, the post-deploy canary (L112)
-// for a project with a live URL.
+// Files only some projects get: DESIGN.md for a project with screens (stage 2, L113), keepalive for a
+// free-tier DB and the post-deploy canary (L112) for a project with a live URL (stage 5).
 const OPTIONAL_FILES = [
-  [a.freeTier, "ci/keepalive.yml", ".github/workflows/keepalive.yml"],
-  [set(a.prodUrl), "ci/canary.yml", ".github/workflows/canary.yml"],
-  [set(a.prodUrl), "tests/canary/canary.spec.mjs", "tests/canary/canary.spec.mjs"],
-  [set(a.prodUrl), "tests/canary/playwright.config.mjs", "tests/canary/playwright.config.mjs"],
+  [a.ui !== false, 2, "DESIGN.md", "DESIGN.md"],
+  [a.freeTier, 5, "ci/keepalive.yml", ".github/workflows/keepalive.yml"],
+  [set(a.prodUrl), 5, "ci/canary.yml", ".github/workflows/canary.yml"],
+  [set(a.prodUrl), 5, "tests/canary/canary.spec.mjs", "tests/canary/canary.spec.mjs"],
+  [set(a.prodUrl), 5, "tests/canary/playwright.config.mjs", "tests/canary/playwright.config.mjs"],
 ];
-for (const [wanted, src, rel] of OPTIONAL_FILES) {
-  if (!wanted || (onlyStage !== null && onlyStage !== 5)) continue;
+for (const [wanted, stage, src, rel] of OPTIONAL_FILES) {
+  if (!wanted || (onlyStage !== null && onlyStage !== stage)) continue;
   const dst = join(root, rel);
   if (!existsSync(dst) || force) { mkdirSync(dirname(dst), { recursive: true }); writeOut(dst, dst, render(readFileSync(join(T, src), "utf8"))); console.log(`write  ${rel}`); written++; }
 }
