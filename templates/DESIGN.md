@@ -1,7 +1,7 @@
 ---
 version: alpha
 name: {{PROJECT_NAME}}
-description: Design system for {{PROJECT_NAME}}, {{ONE_LINER}}.
+description: "Design system for {{PROJECT_NAME}}: {{ONE_LINER}}"
 colors:
   primary: "#1F2937"
   on-primary: "#FFFFFF"
