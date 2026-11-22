@@ -115,9 +115,10 @@ test("DESIGN.md renders at stage 2 for a project with screens, filled in, and no
   const r = spawnSync(process.execPath, [join(here, "render.mjs"), dir, answers, "--stage", "2"], { encoding: "utf8" });
   assert.equal(r.status, 0, r.stderr);
   const design = readFileSync(join(dir, "DESIGN.md"), "utf8");
-  assert.match(design, /^---\nversion: alpha\nname: /);
+  assert.match(design, /^---\r?\nversion: alpha\r?\nname: /); // .md keeps the checkout's line endings
   assert.match(design, /## Overview[\s\S]*## Colors[\s\S]*## Typography[\s\S]*## Layout[\s\S]*## Shapes[\s\S]*## Components[\s\S]*## Do's and Don'ts/);
   assert.doesNotMatch(design, /\{\{[A-Z_]+\}\}/);
+  assert.doesNotMatch(design, /\.\."?\r?$/m); // a one-liner ending in a period never doubles it
   rmSync(dir, { recursive: true, force: true });
 
   const noUi = tmp();
