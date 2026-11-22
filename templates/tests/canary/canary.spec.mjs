@@ -27,4 +27,6 @@ for (const path of PAGES) {
 
 // The one flow users must be able to finish (sign in and open the main screen, place an order, ...).
 // Fill it in during stage 6; until then the canary reports it as fixme, never as a pass (L112).
+// Sign in as a test user the owner set up fully in PRODUCTION (multi-tenant: a member of a tenant that has data),
+// with credentials from repo secrets. A half-set-up user lands on onboarding and fails the first run.
 test.fixme("core flow", async () => {});
