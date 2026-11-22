@@ -55,5 +55,6 @@
   "typesTargets": ["apps/web/src/lib/database.types.ts", "apps/api/src/lib/database.types.ts"],
   "lineEndings": "CRLF",
   "vaultPath": "Projects/Example CRM",
+  "ui": true,
   "freeTier": true
 }

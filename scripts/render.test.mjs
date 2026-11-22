@@ -23,7 +23,7 @@ const EXPECTED = [
   "scripts/gates.mjs", "scripts/preflight.mjs", ".github/workflows/gates.yml",
   "supabase/migrations/00000000000000_auth_hook.sql", "AGENTS.md", "scripts/worktree-setup.ps1",
   "scripts/worktree-setup.sh", ".github/workflows/keepalive.yml", ".claude/hooks/_shell.js", ".claude/hooks/package.json",
-  ".gitattributes", ".github/workflows/canary.yml", "tests/canary/canary.spec.mjs", "tests/canary/playwright.config.mjs",
+  ".gitattributes", "DESIGN.md", ".github/workflows/canary.yml", "tests/canary/canary.spec.mjs", "tests/canary/playwright.config.mjs",
 ];
 
 test("full render writes every deliverable and leaves no placeholder", () => {
@@ -107,4 +107,23 @@ test("the post-deploy canary renders only for a project with a live URL, with it
   assert.equal(existsSync(join(noUrl, ".github/workflows/canary.yml")), false);
   assert.equal(existsSync(join(noUrl, "tests/canary/canary.spec.mjs")), false);
   rmSync(noUrl, { recursive: true, force: true });
+});
+
+test("DESIGN.md renders at stage 2 for a project with screens, filled in, and not when ui is false", () => {
+  const base = JSON.parse(readFileSync(answers, "utf8"));
+  const dir = tmp();
+  const r = spawnSync(process.execPath, [join(here, "render.mjs"), dir, answers, "--stage", "2"], { encoding: "utf8" });
+  assert.equal(r.status, 0, r.stderr);
+  const design = readFileSync(join(dir, "DESIGN.md"), "utf8");
+  assert.match(design, /^---\nversion: alpha\nname: /);
+  assert.match(design, /## Overview[\s\S]*## Colors[\s\S]*## Typography[\s\S]*## Layout[\s\S]*## Shapes[\s\S]*## Components[\s\S]*## Do's and Don'ts/);
+  assert.doesNotMatch(design, /\{\{[A-Z_]+\}\}/);
+  rmSync(dir, { recursive: true, force: true });
+
+  const noUi = tmp();
+  const custom = join(noUi, "answers.json");
+  writeFileSync(custom, JSON.stringify({ ...base, ui: false }));
+  spawnSync(process.execPath, [join(here, "render.mjs"), noUi, custom, "--stage", "2"], { encoding: "utf8" });
+  assert.equal(existsSync(join(noUi, "DESIGN.md")), false);
+  rmSync(noUi, { recursive: true, force: true });
 });
